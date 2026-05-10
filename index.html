@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO-PNP · Sistema Estadístico Operacional · Región Amazonas · v4.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --cr:#005030;--cr-d:#003520;--cr-l:#007a41;--cr-glow:rgba(0,80,48,.35);
+  --gold:#C9A84C;--gold-l:#e8c96b;--gold-d:#a07830;
+  --bg:#04080a;--bg2:#0a0f0d;--bg3:#101812;--bg4:#162018;--bg5:#1e2a20;
+  --bd:#1a2e20;--bd2:#22402a;--bd3:#2e5238;
+  --tx:#dde8e2;--tx2:#7a9a84;--tx3:#3a5442;--tx4:#1e3228;
+  --gr:#1a9c5c;--gr-l:#22c070;
+  --bl:#1a5cb0;--bl-l:#2874d8;
+  --am:#b87820;--am-l:#dca030;
+  --pu:#6a30b0;--pu-l:#8a48d8;
+  --rd:#cc2800;--rd-l:#ff4422;
+  --shadow:0 4px 24px rgba(0,0,0,.5);
+  --shadow-sm:0 2px 12px rgba(0,0,0,.4);
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;font-size:14px;overflow-x:hidden;}
+
+/* ━━━━━ TOPBAR ━━━━━ */
+.topbar{
+  background:var(--bg2);border-bottom:1px solid var(--bd2);
+  padding:0 28px;height:60px;display:flex;align-items:center;gap:18px;
+  position:sticky;top:0;z-index:300;box-shadow:0 2px 20px rgba(0,0,0,.6);
+}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cr) 0%,var(--gold) 50%,var(--cr) 100%);}
+.shield{width:40px;height:40px;flex-shrink:0;background:linear-gradient(135deg,var(--cr),var(--cr-d));clip-path:polygon(50% 0%,100% 20%,100% 65%,50% 100%,0% 65%,0% 20%);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:'Barlow Condensed',sans-serif;font-weight:800;color:#fff;letter-spacing:.5px;box-shadow:0 0 16px var(--cr-glow);}
+.brand{line-height:1.2;}
+.brand-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;color:var(--tx);letter-spacing:.1em;text-transform:uppercase;}
+.brand-s{font-size:10px;color:var(--tx3);letter-spacing:.07em;text-transform:uppercase;margin-top:1px;}
+.tb-right{display:flex;align-items:center;gap:16px;margin-left:auto;}
+.sys-badge{display:flex;align-items:center;gap:7px;background:rgba(26,156,92,.1);border:1px solid rgba(26,156,92,.3);border-radius:4px;padding:5px 12px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--gr-l);animation:blink 2s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 6px var(--gr-l)}50%{opacity:.3;box-shadow:none}}
+.sys-txt{font-size:11px;color:var(--gr-l);font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.07em;}
+.clock{font-family:'Barlow Condensed',sans-serif;font-size:14px;color:var(--gold);letter-spacing:.1em;min-width:220px;text-align:right;}
+
+/* ━━━━━ NAV ━━━━━ */
+.nav{background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;overflow-x:auto;padding:0 28px;gap:0;}
+.ntab{padding:12px 20px;font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;user-select:none;display:flex;align-items:center;gap:7px;}
+.ntab:hover{color:var(--tx2);background:rgba(255,255,255,.02);}
+.ntab.on{color:var(--gold);border-bottom-color:var(--gold);background:rgba(201,168,76,.04);}
+.ntab .nbadge{background:var(--cr);color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;letter-spacing:.04em;}
+
+/* ━━━━━ LAYOUT ━━━━━ */
+.wrap{max-width:1400px;margin:0 auto;padding:28px;}
+.panel{display:none;animation:fadein .2s ease;}.panel.on{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ━━━━━ SEC HEADERS ━━━━━ */
+.sh{display:flex;align-items:center;gap:12px;margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--bd2);}
+.sh-ico{width:34px;height:34px;background:linear-gradient(135deg,var(--cr),var(--cr-d));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:0 2px 10px var(--cr-glow);}
+.sh-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;letter-spacing:.07em;text-transform:uppercase;color:var(--tx);}
+.sh-sub{font-size:11px;color:var(--tx3);margin-left:auto;font-family:'Barlow Condensed',sans-serif;letter-spacing:.05em;text-align:right;}
+
+/* ━━━━━ CARDS ━━━━━ */
+.card{background:var(--bg2);border:1px solid var(--bd2);border-radius:10px;padding:20px;margin-bottom:18px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--bd3),transparent);}
+.card-t{font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card-t::before{content:'';width:14px;height:2px;background:var(--cr);border-radius:1px;}
+
+/* ━━━━━ MODE TOGGLE ━━━━━ */
+.mode-toggle{display:inline-flex;background:var(--bg4);border:1px solid var(--bd2);border-radius:8px;padding:4px;gap:4px;margin-bottom:18px;}
+.mt-btn{padding:9px 22px;font-size:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:5px;cursor:pointer;transition:all .2s;color:var(--tx3);border:none;background:transparent;}
+.mt-btn.on{background:var(--cr);color:#fff;box-shadow:0 2px 12px var(--cr-glow);}
+.mt-btn:not(.on):hover{color:var(--tx2);background:rgba(255,255,255,.04);}
+
+/* ━━━━━ FILE DROP ━━━━━ */
+.fdrop{border:2px dashed var(--bd3);border-radius:10px;padding:44px 28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3);position:relative;overflow:hidden;}
+.fdrop:hover,.fdrop.drag{border-color:var(--cr);background:rgba(139,0,0,.06);}
+.fdrop.loaded{border-color:var(--gr);border-style:solid;background:rgba(26,156,92,.05);}
+.fdrop .ico{font-size:36px;margin-bottom:14px;display:block;}
+.fdrop .lbl{font-size:13px;color:var(--tx2);line-height:1.7;}
+.fdrop .lbl strong{color:var(--tx);font-weight:600;}
+.fdrop .fname{font-size:13px;color:var(--gr-l);margin-top:10px;font-weight:600;font-family:'Barlow Condensed',sans-serif;letter-spacing:.05em;}
+#fi{display:none;}
+
+/* ━━━━━ GRIDS ━━━━━ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.gkpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-bottom:18px;}
+
+/* ━━━━━ FORM ━━━━━ */
+label.lbl{display:block;font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--tx3);margin-bottom:6px;}
+select,input[type=date],input[type=text]{width:100%;padding:10px 13px;font-size:13px;font-family:'Barlow',sans-serif;background:var(--bg3);border:1px solid var(--bd2);border-radius:7px;color:var(--tx);outline:none;transition:border-color .15s,box-shadow .15s;}
+select:focus,input:focus{border-color:var(--cr);box-shadow:0 0 0 3px rgba(139,0,0,.15);}
+
+/* ━━━━━ MONTH GRID ━━━━━ */
+.mgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:8px;}
+.mb{padding:7px 2px;font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;border:1px solid var(--bd2);border-radius:5px;background:var(--bg3);color:var(--tx3);cursor:pointer;text-align:center;transition:all .12s;letter-spacing:.04em;text-transform:uppercase;user-select:none;}
+.mb:hover{border-color:var(--cr-l);color:var(--cr-l);}
+.mb.sel{background:var(--cr);color:#fff;border-color:var(--cr);box-shadow:0 0 8px var(--cr-glow);}
+.mb.rng{background:rgba(139,0,0,.2);color:#e57373;border-color:rgba(139,0,0,.5);}
+
+/* ━━━━━ YEAR CHIPS ━━━━━ */
+.yr-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.yc{padding:7px 16px;font-size:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:5px;border:1px solid var(--bd2);background:var(--bg3);color:var(--tx3);cursor:pointer;transition:all .15s;}
+.yc:hover{border-color:var(--gold);color:var(--gold);}
+.yc.on{background:var(--gold-d);color:#fff;border-color:var(--gold);}
+
+/* ━━━━━ PILLS ━━━━━ */
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.pill{font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px;border-radius:4px;background:var(--bg4);color:var(--tx3);border:1px solid var(--bd);cursor:pointer;transition:all .12s;}
+.pill:hover{border-color:var(--cr-l);color:var(--cr-l);}
+.pill.on{background:var(--cr);color:#fff;border-color:var(--cr);}
+
+/* ━━━━━ BUTTONS ━━━━━ */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.09em;text-transform:uppercase;border-radius:7px;cursor:pointer;transition:all .15s;border:none;white-space:nowrap;}
+.btn-red{background:linear-gradient(135deg,var(--cr),var(--cr-d));color:#fff;box-shadow:0 2px 14px var(--cr-glow);}
+.btn-red:hover{background:linear-gradient(135deg,var(--cr-l),var(--cr));box-shadow:0 4px 20px var(--cr-glow);}
+.btn-red:disabled{background:var(--bg4);color:var(--tx3);cursor:not-allowed;box-shadow:none;}
+.btn-out{background:transparent;border:1px solid var(--bd2);color:var(--tx2);}
+.btn-out:hover{background:var(--bg3);border-color:var(--bd3);}
+.btn-gold{border:1px solid var(--gold-d);color:var(--gold);background:rgba(201,168,76,.06);}
+.btn-gold:hover{background:rgba(201,168,76,.14);border-color:var(--gold);}
+.btn-green{border:1px solid var(--gr);color:var(--gr-l);background:rgba(26,156,92,.06);}
+.btn-green:hover{background:rgba(26,156,92,.14);}
+.btn-full{width:100%;justify-content:center;}
+.btn-lg{padding:13px 28px;font-size:13px;}
+
+/* ━━━━━ STATUS ━━━━━ */
+.status{display:none;padding:11px 16px;border-radius:7px;font-size:12px;margin-top:12px;align-items:center;gap:9px;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:.04em;}
+.st-info{display:flex;background:rgba(40,116,216,.12);color:#7ab0ff;border:1px solid rgba(40,116,216,.3);}
+.st-ok{display:flex;background:rgba(34,192,112,.1);color:#4ecf88;border:1px solid rgba(34,192,112,.3);}
+.st-err{display:flex;background:rgba(255,68,34,.1);color:#ff8070;border:1px solid rgba(255,68,34,.3);}
+
+/* ━━━━━ KPI CARDS ━━━━━ */
+.kpi{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .15s;}
+.kpi:hover{border-color:var(--bd2);}
+.kpi::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cr);}
+.kpi.k-gold::before{background:var(--gold);}
+.kpi.k-green::before{background:var(--gr-l);}
+.kpi.k-blue::before{background:var(--bl-l);}
+.kpi.k-amber::before{background:var(--am-l);}
+.kpi.k-pu::before{background:var(--pu-l);}
+.kpi-lbl{font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:5px;}
+.kpi-val{font-size:28px;font-family:'Barlow Condensed',sans-serif;font-weight:800;color:var(--tx);line-height:1;}
+.kpi-sub{font-size:10px;color:var(--tx3);margin-top:4px;font-family:'Barlow Condensed',sans-serif;}
+
+/* ━━━━━ DATA TABLE ━━━━━ */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;}
+table.dt{width:100%;border-collapse:collapse;font-size:11.5px;min-width:600px;}
+table.dt thead tr.hdr1 th{background:var(--cr-d);color:#fff;padding:8px 10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.07em;text-transform:uppercase;font-size:10px;text-align:center;white-space:nowrap;}
+table.dt thead tr.hdr1 th:first-child{text-align:left;min-width:200px;}
+table.dt thead tr.hdr2 th{background:var(--bg4);color:var(--tx3);padding:5px 10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:9px;letter-spacing:.06em;text-transform:uppercase;text-align:center;border-bottom:1px solid var(--bd2);}
+table.dt tbody td{padding:6px 10px;border-bottom:1px solid var(--bd);color:var(--tx);}
+table.dt tbody td:first-child{font-weight:500;background:var(--bg3);color:var(--tx2);font-size:11px;position:sticky;left:0;z-index:1;}
+table.dt tbody td:not(:first-child){text-align:right;padding-right:14px;}
+table.dt tbody tr:hover td{background:rgba(255,255,255,.022);}
+table.dt tbody tr:hover td:first-child{background:var(--bg4);}
+table.dt td.z{color:var(--tx4);}
+table.dt td.tot{background:rgba(201,168,76,.08)!important;color:var(--gold-l);font-weight:700;}
+table.dt td.yr-sep{border-left:2px solid var(--bd2);}
+
+/* ━━━━━ RANKING ━━━━━ */
+.rank-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd);}
+.rank-row:last-child{border:none;}
+.rn{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;color:var(--tx4);width:24px;text-align:right;flex-shrink:0;}
+.rn.top{color:var(--gold);}
+.rd{flex:1;font-size:11px;color:var(--tx);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rb-bg{width:90px;height:5px;background:var(--bg5);border-radius:3px;overflow:hidden;flex-shrink:0;}
+.rb-fill{height:100%;background:var(--cr);border-radius:3px;transition:width .6s ease;}
+.rv{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--tx2);width:50px;text-align:right;flex-shrink:0;}
+
+/* ━━━━━ COMPARISON CHART ━━━━━ */
+.cmp-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.cmp-d{font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.04em;width:150px;color:var(--tx2);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
+.cmp-bg{flex:1;height:18px;background:var(--bg5);border-radius:3px;overflow:hidden;position:relative;}
+.cmp-fill{height:100%;border-radius:3px;transition:width .5s ease;display:flex;align-items:center;padding-left:7px;min-width:2px;}
+.cmp-fill.c0{background:var(--cr);}
+.cmp-fill.c1{background:var(--bl-l);}
+.cmp-fill.c2{background:var(--gr);}
+.cmp-fill.c3{background:var(--am-l);}
+.cmp-fill.c4{background:var(--pu-l);}
+.cmp-pct{font-size:9px;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:rgba(255,255,255,.85);}
+.cmp-v{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--tx2);width:60px;text-align:right;flex-shrink:0;}
+
+/* ━━━━━ MULTI-YEAR COMPARISON ━━━━━ */
+.yrcmp-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);}
+.yrcmp-row:last-child{border:none;}
+.yrcmp-yr{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--gold);width:50px;}
+.yrcmp-val{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;color:var(--tx);width:90px;text-align:right;}
+.yrcmp-bar-bg{flex:1;height:8px;background:var(--bg5);border-radius:4px;overflow:hidden;}
+.yrcmp-bar-fill{height:100%;border-radius:4px;transition:width .6s ease;}
+.yrcmp-delta{font-family:'Barlow Condensed',sans-serif;font-size:11px;width:70px;text-align:right;font-weight:600;}
+.delta-up{color:var(--gr-l);}
+.delta-dn{color:var(--rd-l);}
+.delta-eq{color:var(--tx3);}
+
+.tp{display:none;animation:fadein .15s ease;}.tp.on{display:block;}
+
+/* ━━━━━ EXPORT HEADER ━━━━━ */
+.exp-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:linear-gradient(135deg,var(--bg3),var(--bg4));border:1px solid var(--bd2);border-radius:10px;padding:14px 20px;margin-bottom:18px;}
+.exp-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--gold);letter-spacing:.07em;text-transform:uppercase;}
+.exp-meta{font-size:10px;color:var(--tx3);margin-top:3px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ━━━━━ EMPTY STATE ━━━━━ */
+.empty{text-align:center;padding:60px 24px;color:var(--tx3);}
+.empty-ico{font-size:40px;margin-bottom:14px;opacity:.5;}
+.empty-t{font-family:'Barlow Condensed',sans-serif;font-size:15px;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);}
+.empty-s{font-size:12px;margin-top:7px;color:var(--tx4);}
+
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--bd2),transparent);margin:22px 0;}
+
+.dbadge{display:inline-block;font-size:9px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:3px;vertical-align:middle;margin-left:5px;}
+.dbadge.up{background:rgba(34,192,112,.15);color:var(--gr-l);}
+.dbadge.dn{background:rgba(255,68,34,.15);color:var(--rd-l);}
+
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.15);border-top-color:#fff;border-radius:50%;animation:sp .5s linear infinite;flex-shrink:0;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--cr);}
+
+.wmk{text-align:center;padding:20px;font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--tx4);letter-spacing:.12em;text-transform:uppercase;border-top:1px solid var(--bd);margin-top:32px;}
+
+/* ━━━━━ MODAL ADMIN ━━━━━ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);animation:fadein .2s ease;}
+.modal-box{background:var(--bg2);border:1px solid var(--bd2);border-radius:14px;padding:36px 40px;width:100%;max-width:440px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.8);}
+.modal-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cr),var(--gold),var(--cr));border-radius:14px 14px 0 0;}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+.modal-sub{font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.05em;margin-bottom:28px;}
+.modal-field{margin-bottom:18px;}
+.modal-field label{display:block;font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--tx3);margin-bottom:7px;}
+.modal-field input{width:100%;padding:12px 16px;font-size:14px;font-family:'Barlow',sans-serif;background:var(--bg3);border:1px solid var(--bd2);border-radius:8px;color:var(--tx);outline:none;transition:border-color .15s,box-shadow .15s;letter-spacing:.04em;}
+.modal-field input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.15);}
+.modal-err{font-size:11px;color:var(--rd-l);margin-top:8px;display:none;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--tx3);cursor:pointer;font-size:18px;padding:4px;transition:color .15s;}
+.modal-close:hover{color:var(--tx);}
+.shield-lg{width:56px;height:56px;background:linear-gradient(135deg,var(--cr),var(--cr-d));clip-path:polygon(50% 0%,100% 20%,100% 65%,50% 100%,0% 65%,0% 20%);display:flex;align-items:center;justify-content:center;font-size:13px;font-family:'Barlow Condensed',sans-serif;font-weight:800;color:#fff;letter-spacing:.5px;box-shadow:0 0 24px var(--cr-glow);margin:0 auto 18px;}
+
+/* ━━━━━ DRIVE STATUS ━━━━━ */
+.drive-status{display:flex;align-items:center;gap:10px;padding:14px 18px;border-radius:8px;background:var(--bg3);border:1px solid var(--bd2);margin-bottom:18px;}
+.drive-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.drive-dot.connected{background:var(--gr-l);box-shadow:0 0 8px var(--gr-l);animation:blink 2s infinite;}
+.drive-dot.disconnected{background:var(--rd-l);}
+.drive-dot.loading{background:var(--am-l);animation:blink .8s infinite;}
+.drive-info{flex:1;}
+.drive-info-t{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--tx);letter-spacing:.04em;}
+.drive-info-s{font-size:10px;color:var(--tx3);margin-top:2px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;}
+
+/* ━━━━━ ADMIN PANEL INSIDE ━━━━━ */
+.admin-panel{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(0,80,48,.08));border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:22px;margin-bottom:18px;}
+.admin-panel-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.admin-panel-s{font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;margin-bottom:18px;letter-spacing:.04em;}
+.url-input-wrap{display:flex;gap:8px;align-items:flex-end;}
+.url-input-wrap input{flex:1;}
+.url-preview{font-size:10px;color:var(--tx3);margin-top:8px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;word-break:break-all;}
+.url-preview span{color:var(--gr-l);}
+
+/* ━━━━━ LOADING OVERLAY ━━━━━ */
+.load-overlay{position:fixed;inset:0;background:rgba(4,8,10,.92);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+.load-spinner{width:50px;height:50px;border:3px solid rgba(201,168,76,.15);border-top-color:var(--gold);border-radius:50%;animation:sp .8s linear infinite;}
+.load-msg{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);}
+.load-sub{font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.05em;}
+
+/* ══════════════════════════════════════
+   DASHBOARD ESTILOS — diseño referencia
+══════════════════════════════════════ */
+
+/* ── Wrapper del dashboard ── */
+#p-dash{background:#000;min-height:100vh;}
+.dash-wrap{max-width:1380px;margin:0 auto;padding:20px 24px;}
+
+/* ── HEADER PRINCIPAL ── */
+.dash-main-hdr{
+  text-align:center;padding:18px 0 6px;
+  border-bottom:2px solid rgba(255,255,255,.08);
+  margin-bottom:6px;
+}
+.dash-main-title{
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;
+  font-size:28px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--gold);text-shadow:0 0 30px rgba(201,168,76,.4);
+}
+.dash-main-periodo{
+  font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:#4fc3f7;margin-top:4px;
+}
+.dash-main-ts{
+  font-family:'Barlow Condensed',sans-serif;font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:2px;
+}
+
+/* ── CONFIG BAR ── */
+.dash-cfg{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:12px 18px;margin:12px 0;
+  display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;
+}
+.dash-cfg-field{flex:1;min-width:120px;max-width:180px;}
+.dash-cfg-field label.lbl{color:rgba(255,255,255,.4);margin-bottom:4px;font-size:9px;}
+.dash-cfg select,.dash-cfg input{
+  background:#0a0a0a;border:1px solid rgba(255,255,255,.12);
+  color:#fff;font-size:12px;padding:7px 10px;border-radius:5px;
+}
+
+/* ── LAYOUT PRINCIPAL: 3 cols ── */
+.dash-layout{
+  display:grid;
+  grid-template-columns:320px 1fr 320px;
+  gap:14px;align-items:start;
+  margin-top:10px;
+}
+
+/* ── COLUMNA IZQ / DER: stack de tarjetas ── */
+.dash-col{display:flex;flex-direction:column;gap:12px;}
+
+/* ── TARJETA INDICADOR ESTILO IMAGEN ── */
+.dcard{
+  border-radius:6px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.06);
+  position:relative;
+}
+/* Header de la tarjeta */
+.dcard-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;
+  font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#fff;
+}
+.dcard-ico{font-size:18px;opacity:.9;}
+/* Body de la tarjeta */
+.dcard-body{
+  background:#111;
+  padding:0;
+}
+.dcard-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.dcard-row:last-child{border-bottom:none;}
+.dcard-cell{
+  padding:9px 12px;text-align:center;
+  border-right:1px solid rgba(255,255,255,.05);
+}
+.dcard-cell:last-child{border-right:none;}
+.dcard-cell-lbl{
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);margin-bottom:4px;
+}
+.dcard-yr{
+  font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.08em;color:rgba(255,255,255,.5);
+}
+/* Valor año anterior (menor, grisáceo) */
+.dcard-val-prev{
+  font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;
+  color:rgba(255,255,255,.45);line-height:1;
+}
+/* Valor año actual (grande, color) */
+.dcard-val-curr{
+  font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;
+  color:#fff;line-height:1;
+}
+
+/* Colores de header por indicador */
+.dcard.blue .dcard-hdr{background:#1565C0;}
+.dcard.gold .dcard-hdr{background:#8a6200;}
+.dcard.blue2 .dcard-hdr{background:#1a237e;}
+.dcard.blue3 .dcard-hdr{background:#0d47a1;}
+.dcard.green .dcard-hdr{background:#1b5e20;}
+.dcard.green2 .dcard-hdr{background:#2e7d32;}
+.dcard.green3 .dcard-hdr{background:#1a9c5c;}
+.dcard.green4 .dcard-hdr{background:#00695c;}
+
+/* ── COLUMNA CENTRAL: Círculo operativos + mapa ── */
+.dash-center{
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+}
+
+/* Círculo de operativos */
+.ops-circle-wrap{
+  position:relative;width:280px;height:280px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.ops-circle-svg{position:absolute;top:0;left:0;width:100%;height:100%;}
+.ops-circle-inner{
+  position:relative;z-index:2;text-align:center;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.ops-year-badge{
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;
+  font-size:64px;color:var(--gold);line-height:1;
+  text-shadow:0 0 40px rgba(201,168,76,.6);
+}
+.ops-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--gr-l);margin:6px 0 14px;
+}
+.ops-values-row{display:flex;gap:22px;align-items:flex-end;}
+.ops-val-item{text-align:center;}
+.ops-val-yr{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.06em;margin-bottom:2px;}
+.ops-val-num{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;line-height:1;}
+.ops-val-num.prev{color:rgba(255,255,255,.55);}
+.ops-val-num.curr{color:var(--gold);}
+.ops-source{
+  font-family:'Barlow Condensed',sans-serif;font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(255,255,255,.2);margin-top:8px;
+}
+
+/* Mapa Amazonas */
+.dash-map-wrap{width:100%;max-width:280px;}
+.dash-map-wrap svg{width:100%;height:auto;}
+
+
+
+/* Delta badge */
+.ops-delta{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:5px;padding:5px 14px;margin-top:6px;
+}
+.ops-delta-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:rgba(255,255,255,.35);letter-spacing:.06em;text-transform:uppercase;}
+.ops-delta-v{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;}
+.ops-delta-v.up{color:var(--gr-l);}
+.ops-delta-v.dn{color:var(--rd-l);}
+
+/* Medidas de protección */
+.ops-medidas-row{
+  display:flex;align-items:center;gap:10px;width:100%;
+  background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15);
+  border-radius:5px;padding:8px 14px;
+}
+.ops-med-lbl{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.4);flex:1;}
+.ops-med-val{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--gold);}
+
+
+/* ══════════════════════════════════════
+   DASHBOARD v5.1 — ESTILOS TÁCTICOS
+══════════════════════════════════════ */
+.filter-section{
+  background:var(--bg2);border:1px solid var(--bd2);border-radius:10px;
+  padding:16px 20px;margin-bottom:18px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;
+}
+.f-group{display:flex;flex-direction:column;gap:5px;}
+.f-group label{font-size:9px;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;}
+
+.dashboard-visual{
+  display:grid;grid-template-columns:295px 1fr 295px;gap:16px;
+  background:#000;padding:22px;border-radius:10px;border:1px solid var(--bd2);
+}
+.db-header{
+  grid-column:1 / -1;text-align:center;padding-bottom:14px;
+  border-bottom:2px solid rgba(255,255,255,.07);margin-bottom:12px;
+}
+.db-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:26px;color:var(--gold-l);letter-spacing:.15em;text-transform:uppercase;}
+.db-meta{font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--gold);margin-top:5px;text-transform:uppercase;font-weight:700;letter-spacing:.08em;}
+.db-ts{font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;letter-spacing:.05em;}
+
+.db-card{
+  background:linear-gradient(180deg,#161b22 0%,#0d1117 100%);
+  border:1px solid #2a3040;border-radius:7px;overflow:hidden;
+  margin-bottom:12px;box-shadow:0 4px 14px rgba(0,0,0,.5);
+}
+.db-card:last-child{margin-bottom:0;}
+.db-card-hdr{
+  padding:8px 13px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:12px;
+  display:flex;justify-content:space-between;align-items:center;
+  color:#fff;text-transform:uppercase;letter-spacing:.12em;
+}
+.h-bl{background:linear-gradient(90deg,#1565C0,#0d2e5a);}
+.h-or{background:linear-gradient(90deg,#b87820,#6e4d11);}
+.h-rd{background:linear-gradient(90deg,#8B0000,#5c0000);}
+.h-gr{background:linear-gradient(90deg,#1a5c20,#0a2e10);}
+.h-bl2{background:linear-gradient(90deg,#1a4a9c,#0d2460);}
+
+.db-table{width:100%;border-collapse:collapse;color:#fff;}
+.db-table th{
+  background:rgba(255,255,255,.03);padding:5px 8px;font-size:9px;
+  color:var(--gold-l);text-align:center;font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.04);
+}
+.db-table td{
+  padding:10px 8px;text-align:center;
+  border:1px solid rgba(255,255,255,.04);
+  font-family:'Barlow Condensed',sans-serif;
+}
+.v-val{font-size:30px;font-weight:800;color:#fff;line-height:1;}
+.v-old{font-size:20px;font-weight:700;color:rgba(255,255,255,.38);line-height:1;}
+.v-lbl{font-size:10px;color:rgba(255,255,255,.38);text-transform:uppercase;font-weight:700;letter-spacing:.06em;}
+
+.db-center{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;padding:0 10px;gap:14px;
+}
+.ops-core{
+  position:relative;width:310px;height:310px;border-radius:50%;
+  background:radial-gradient(circle,#1a1f26 0%,#05070a 100%);
+  border:3px solid var(--cr);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:0 0 60px rgba(0,0,0,.8),inset 0 0 40px rgba(201,168,76,.05);
+  overflow:hidden;flex-shrink:0;
+}
+.ops-core::before{
+  content:'';position:absolute;top:-8px;left:-8px;right:-8px;bottom:-8px;
+  border-radius:50%;border:2px dashed var(--gold);opacity:.2;
+  animation:dbRotate 30s linear infinite;
+}
+@keyframes dbRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.ops-main-unit{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;
+  color:var(--gold);line-height:1.15;text-align:center;padding:0 26px;
+  text-transform:uppercase;margin-bottom:10px;
+  text-shadow:0 0 18px rgba(201,168,76,.3);
+}
+.ops-stats-ring{
+  text-align:center;border-top:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  padding:12px 0;width:84%;
+}
+.ops-title-big{
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;
+  color:var(--gr-l);letter-spacing:.25em;margin-bottom:10px;
+}
+.ops-comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.ops-val-big{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:30px;color:#fff;}
+.ops-source{font-size:9px;color:rgba(255,255,255,.2);text-align:center;text-transform:uppercase;letter-spacing:.08em;}
+
+
+
+
+.btn-pdf{
+  background:linear-gradient(135deg,#8B0000,#5c0000);color:var(--gold-l);
+  padding:10px 22px;border-radius:7px;border:1px solid var(--gold-d);
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:11px;
+  text-transform:uppercase;cursor:pointer;letter-spacing:.09em;
+  box-shadow:0 3px 12px rgba(139,0,0,.4);display:inline-flex;align-items:center;gap:7px;
+}
+.btn-pdf:hover{background:linear-gradient(135deg,#a52020,#8B0000);}
+
+/* Print / Export */
+@media print{
+  .topbar,.nav,.btn,.btn-group,.fdrop,#btn-area,.mode-toggle,.tp-ctrl,.filter-section{display:none!important;}
+  body{background:#fff!important;color:#000!important;}
+  .card,.kpi{background:#fff!important;border:1px solid #ddd!important;}
+  .dashboard-visual{border:none!important;}
+  .db-card-hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+
+/* Responsive */
+@media(max-width:1100px){
+  .dashboard-visual{grid-template-columns:1fr!important;}
+  .db-center{order:-1;}
+  .g2,.g3,.g4{grid-template-columns:1fr!important;}
+  .clock{display:none;}
+  .wrap{padding:14px;}
+}
+@media(max-width:600px){
+  .filter-section{grid-template-columns:1fr 1fr!important;}
+  .v-val{font-size:22px!important;}
+  .ops-core{width:260px!important;height:260px!important;}
+  .ops-val-big{font-size:22px!important;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="shield">PNP</div>
+  <div class="brand">
+    <div class="brand-t">PNP Sistema Estadístico Operacional</div>
+    <div class="brand-s">Región Policial Amazonas · Estadística PNP · v4.0</div>
+  </div>
+  <div class="tb-right">
+    <div class="sys-badge"><div class="dot"></div><span class="sys-txt">Sistema Activo</span></div>
+    <div class="clock" id="clk"></div>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="ntab on" onclick="showP('p-carga',0)">📂 Datos</div>
+  <div class="ntab" onclick="showP('p-dash',1)">🖼️ Dashboard <span class="nbadge" id="nb-dash" style="display:none">●</span></div>
+  <div class="ntab" onclick="showP('p-config',2)">⚙️ Configuración</div>
+  <div class="ntab" onclick="showP('p-reporte',3)">📋 Reporte <span class="nbadge" id="nb-rep" style="display:none">●</span></div>
+  <div class="ntab" onclick="showP('p-export',4)">💾 Exportar XLSM</div>
+  <div class="ntab" onclick="openAdminModal()" style="margin-left:auto;color:var(--gold-d);border-color:transparent;">🔐 Admin</div>
+</div>
+
+<div class="wrap">
+
+<!-- ═══════════════════════════════════════
+     PANEL 0: CARGA (Google Drive)
+═══════════════════════════════════════ -->
+<div class="panel on" id="p-carga">
+  <div class="sh"><div class="sh-ico">📂</div><div class="sh-title">Estado del Sistema</div><div class="sh-sub">Datos vía Google Drive · Solo lectura</div></div>
+
+  <!-- Estado de conexión -->
+  <div class="drive-status" id="drive-status-bar">
+    <div class="drive-dot loading" id="drive-dot"></div>
+    <div class="drive-info">
+      <div class="drive-info-t" id="drive-status-t">Verificando conexión con Google Drive...</div>
+      <div class="drive-info-s" id="drive-status-s">El sistema carga el archivo Excel automáticamente</div>
+    </div>
+    <button class="btn btn-out" onclick="loadFromDrive()" style="font-size:10px;padding:7px 14px;flex-shrink:0;">🔄 Recargar</button>
+  </div>
+
+  <div id="load-ok" style="display:none">
+    <div class="card">
+      <div class="card-t">Resumen del archivo</div>
+      <div class="gkpi" id="load-kpi"></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-t">Años / Hojas detectadas</div>
+        <div class="pills" id="yr-pills"></div>
+      </div>
+      <div class="card">
+        <div class="card-t">Columnas clave detectadas</div>
+        <div class="pills" id="col-pills"></div>
+      </div>
+    </div>
+    <div class="card" style="background:rgba(34,192,112,.05);border-color:rgba(34,192,112,.2);">
+      <div class="card-t" style="color:var(--gr-l);">Última actualización</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--tx);" id="last-update-lbl">—</div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:5px;font-family:'Barlow Condensed',sans-serif;">Los datos se actualizan automáticamente cuando el administrador sube un nuevo archivo a Google Drive.</div>
+    </div>
+    <button class="btn btn-red btn-lg" onclick="showP('p-dash',1)">Ver Dashboard →</button>
+  </div>
+
+  <div id="load-err" style="display:none">
+    <div class="empty">
+      <div class="empty-ico">⚠️</div>
+      <div class="empty-t">No se pudo cargar el archivo</div>
+      <div class="empty-s" id="load-err-msg">Verifique la conexión o contacte al administrador</div>
+      <button class="btn btn-out" onclick="loadFromDrive()" style="margin-top:18px;">🔄 Reintentar</button>
+    </div>
+  </div>
+
+  <div class="status" id="st-load"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PANEL 1: DASHBOARD v5.1
+═══════════════════════════════════════ -->
+<div class="panel" id="p-dash">
+  <div id="dash-empty" class="empty"><div class="empty-ico">📊</div><div class="empty-t">Carga el archivo Excel primero</div><div class="empty-s">Ve a "Carga de Datos" y sube el archivo consolidado</div></div>
+  <div id="dash-body" style="display:none">
+
+    <!-- FILTROS -->
+    <div class="filter-section">
+      <div class="f-group">
+        <label>Año Principal (actual)</label>
+        <select id="yr-sel" onchange="updAnalysis()"></select>
+      </div>
+      <div class="f-group">
+        <label>Año Comparativa</label>
+        <select id="yr-comp" onchange="updAnalysis()"></select>
+      </div>
+      <div class="f-group">
+        <label>Nivel de Detalle</label>
+        <select id="mode-sel" onchange="handleModeChange()">
+          <option value="provincia">Región Amazonas (Total)</option>
+          <option value="division">Por Divisiones Policiales</option>
+          <option value="comisaria">Por Comisarías / Unidades</option>
+        </select>
+      </div>
+      <div class="f-group" id="group-units" style="display:none">
+        <label id="unit-label">Seleccionar Unidad</label>
+        <select id="unit-sel" onchange="updAnalysis()"></select>
+      </div>
+      <div class="f-group">
+        <label>Periodo Temporal</label>
+        <select id="ptype" onchange="toggleDateInputs(); updAnalysis()">
+          <option value="full">Año Consolidado</option>
+          <option value="months">Rango Mensual</option>
+          <option value="days">Rango de Fechas</option>
+        </select>
+      </div>
+      <div class="f-group" id="group-months" style="display:none">
+        <label>Rango de Meses</label>
+        <div style="display:flex;gap:5px;">
+          <select id="m-from" onchange="updAnalysis()" style="flex:1;"></select>
+          <select id="m-to" onchange="updAnalysis()" style="flex:1;"></select>
+        </div>
+      </div>
+      <div class="f-group" id="group-days" style="display:none">
+        <label>Fechas</label>
+        <div style="display:flex;gap:5px;">
+          <input type="date" id="d-df" onchange="updAnalysis()">
+          <input type="date" id="d-dt" onchange="updAnalysis()">
+        </div>
+      </div>
+      <div class="f-group" style="justify-content:flex-end;">
+        <button class="btn-pdf" onclick="saveAsPDF()">📄 Guardar PDF</button>
+      </div>
+    </div>
+
+    <!-- ÁREA EXPORTABLE PDF -->
+    <div id="pdf-export-area" style="background:#000;border-radius:10px;padding:4px;">
+      <div class="dashboard-visual">
+
+        <!-- CABECERA -->
+        <div class="db-header">
+          <div class="db-title">PRODUCCION POLICIAL DE LA REGPOL AMAZONAS</div>
+          <div class="db-meta" id="db-period-lbl">PERIODO: — | COMPARATIVA —</div>
+          <div class="db-ts" id="db-ts">REPORTE OFICIAL GENERADO: —</div>
+        </div>
+
+        <!-- COLUMNA IZQUIERDA -->
+        <div class="db-side">
+          <div class="db-card">
+            <div class="db-card-hdr h-bl"><span>DETENIDOS (PER)</span><span>🔒</span></div>
+            <table class="db-table">
+              <tr><th>PERIODO</th><th class="y-prev">—</th><th class="y-curr" style="color:var(--gold-l);">—</th></tr>
+              <tr><td class="v-lbl">TOTAL</td><td class="v-old" id="v-det-p">0</td><td class="v-val" id="v-det-c">0</td></tr>
+            </table>
+          </div>
+          <div class="db-card">
+            <div class="db-card-hdr h-or"><span>REQUISITORIA</span><span>⚖️</span></div>
+            <table class="db-table">
+              <tr><th>PERIODO</th><th class="y-prev">—</th><th class="y-curr" style="color:var(--gold-l);">—</th></tr>
+              <tr><td class="v-lbl">CAPTURA</td><td class="v-old" id="v-rq-p">0</td><td class="v-val" id="v-rq-c">0</td></tr>
+            </table>
+          </div>
+          <div class="db-card">
+            <div class="db-card-hdr h-bl"><span>ARMAS DE FUEGO</span><span>🔫</span></div>
+            <table class="db-table">
+              <tr><th>PERIODO</th><th class="y-prev">—</th><th class="y-curr" style="color:var(--gold-l);">—</th></tr>
+              <tr><td class="v-lbl">INCAUT.</td><td class="v-old" id="v-af-p">0</td><td class="v-val" id="v-af-c">0</td></tr>
+            </table>
+          </div>
+          <div class="db-card">
+            <div class="db-card-hdr h-bl2"><span>ARMAS BLANCAS</span><span>🗡️</span></div>
+            <table class="db-table">
+              <tr><th>PERIODO</th><th class="y-prev">—</th><th class="y-curr" style="color:var(--gold-l);">—</th></tr>
+              <tr><td class="v-lbl">INCAUT.</td><td class="v-old" id="v-ab-p">0</td><td class="v-val" id="v-ab-c">0</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- COLUMNA CENTRAL -->
+        <div class="db-center">
+          <!-- Núcleo operativos -->
+          <div class="ops-core">
+            <div class="ops-main-unit" id="ops-unit-display">REGIÓN POLICIAL AMAZONAS</div>
+            <div class="ops-stats-ring">
+              <div class="ops-title-big">OPERATIVOS</div>
+              <div class="ops-comp-grid">
+                <div>
+                  <div class="v-lbl y-prev" style="margin-bottom:4px;">—</div>
+                  <div class="ops-val-big" id="v-ops-p">0</div>
+                </div>
+                <div>
+                  <div class="v-lbl y-curr" style="color:var(--gold);margin-bottom:4px;">—</div>
+                  <div class="ops-val-big" id="v-ops-c" style="color:var(--gold);">0</div>
+                </div>
+              </div>
+            </div>
+            <div class="ops-source" style="margin-top:10px;">REGPOL AMAZONAS · UNIDAD DE ESTADÍSTICA</div>
+          </div>
+        </div>
+
+        <!-- COLUMNA DERECHA -->
+        <div class="db-side">
+          <div class="db-card">
+            <div class="db-card-hdr h-rd"><span>BANDAS CRIMIN.</span><span>👥</span></div>
+            <table class="db-table">
+              <tr><th>PERIODO</th><th class="y-prev">—</th><th class="y-curr" style="color:var(--gold-l);">—</th></tr>
+              <tr><td class="v-lbl">DESART.</td><td class="v-old" id="v-ban-p">0</td><td class="v-val" id="v-ban-c">0</td></tr>
+            </table>
+          </div>
+          <div class="db-card">
+            <div class="db-card-hdr h-rd"><span>ORG. CRIMINALES</span><span>🕵️</span></div>
+            <table class="db-table">
+              <tr><th>PERIODO</th><th class="y-prev">—</th><th class="y-curr" style="color:var(--gold-l);">—</th></tr>
+              <tr><td class="v-lbl">DESART.</td><td class="v-old" id="v-org-p">0</td><td class="v-val" id="v-org-c">0</td></tr>
+            </table>
+          </div>
+          <div class="db-card">
+            <div class="db-card-hdr h-gr"><span>DROGA (ENV.)</span><span>💀</span></div>
+            <table class="db-table">
+              <tr><th>PERIODO</th><th class="y-prev">—</th><th class="y-curr" style="color:var(--gold-l);">—</th></tr>
+              <tr><td class="v-lbl">PBC/CC/MAR</td><td class="v-old" id="v-env-p">0</td><td class="v-val" id="v-env-c">0</td></tr>
+            </table>
+          </div>
+          <div class="db-card">
+            <div class="db-card-hdr h-bl"><span>DROGA (KG.)</span><span>⚖️</span></div>
+            <table class="db-table">
+              <tr><th>PERIODO</th><th class="y-prev">—</th><th class="y-curr" style="color:var(--gold-l);">—</th></tr>
+              <tr><td class="v-lbl">PBC/CC/MAR</td><td class="v-old" id="v-kg-p">0.000</td><td class="v-val" id="v-kg-c">0.000</td></tr>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /dashboard-visual -->
+    </div><!-- /pdf-export-area -->
+
+  </div><!-- /dash-body -->
+</div><!-- /p-dash -->
+
+<!-- ═══════════════════════════════════════
+     PANEL 2: CONFIGURACIÓN
+═══════════════════════════════════════ -->
+<div class="panel" id="p-config">
+  <div class="sh"><div class="sh-ico">⚙️</div><div class="sh-title">Configuración del Análisis</div><div class="sh-sub">Modo · Periodo · Unidades</div></div>
+  <div class="card">
+    <div class="card-t">Modo de agrupación</div>
+    <div class="mode-toggle">
+      <button class="mt-btn on" id="mode-div" onclick="setMode('division')">🏢 Por Divisiones</button>
+      <button class="mt-btn" id="mode-com" onclick="setMode('comisaria')">🏠 Por Comisarías</button>
+    </div>
+    <div id="mode-info" style="font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;"></div>
+  </div>
+  <div class="card">
+    <div class="card-t">Selección de años y periodo</div>
+    <div class="g2" style="margin-bottom:16px;">
+      <div>
+        <label class="lbl">Año principal de análisis</label>
+        <select id="yr-main"><option value="">— Seleccionar —</option></select>
+      </div>
+      <div>
+        <label class="lbl">Tipo de periodo</label>
+        <select id="rep-ptype" onchange="togglePP()">
+          <option value="full">Año completo</option>
+          <option value="months">Rango de meses</option>
+          <option value="days">Fechas exactas</option>
+        </select>
+      </div>
+    </div>
+    <div id="pp-m" style="display:none;">
+      <label class="lbl">Meses (clic: inicio → fin)</label>
+      <div class="mgrid" id="mgrid"></div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:7px;font-family:'Barlow Condensed',sans-serif;" id="mlbl"></div>
+    </div>
+    <div id="pp-d" style="display:none;">
+      <div class="g2">
+        <div><label class="lbl">Fecha desde</label><input type="date" id="df"></div>
+        <div><label class="lbl">Fecha hasta</label><input type="date" id="dt"></div>
+      </div>
+    </div>
+    <div id="pp-f" style="display:block;">
+      <div style="background:var(--bg4);border-radius:6px;padding:9px 14px;display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--tx3);letter-spacing:.05em;margin-top:8px;">📅 Todo el año seleccionado</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-t">Unidades a incluir</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <button class="btn btn-out" onclick="selUnits(true)">✓ Todas</button>
+      <button class="btn btn-out" onclick="selUnits(false)">✗ Ninguna</button>
+      <input type="text" id="unit-search" placeholder="Buscar unidad..." style="max-width:220px;width:auto;flex:1;" oninput="filterUnits()">
+    </div>
+    <div class="pills" id="unit-pills"></div>
+    <div id="ucnt" style="font-size:11px;color:var(--tx3);margin-top:8px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;"></div>
+  </div>
+  <div class="card">
+    <div class="card-t">Indicadores a reportar</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <button class="btn btn-out" onclick="selInds(true)">✓ Todos</button>
+      <button class="btn btn-out" onclick="selInds(false)">✗ Ninguno</button>
+      <button class="btn btn-out" onclick="selCat('ops')">Operativos</button>
+      <button class="btn btn-out" onclick="selCat('drog')">Drogas</button>
+      <button class="btn btn-out" onclick="selCat('veh')">Vehículos</button>
+      <button class="btn btn-out" onclick="selCat('arm')">Armas</button>
+    </div>
+    <div class="pills" id="ind-pills"></div>
+  </div>
+  <button class="btn btn-red btn-lg btn-full" id="gbtn" disabled onclick="genReport()" style="max-width:360px;">
+    ⚡ Generar Reporte Consolidado
+  </button>
+  <div class="status" id="st-gen"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PANEL 3: REPORTE
+═══════════════════════════════════════ -->
+<div class="panel" id="p-reporte">
+  <div class="sh"><div class="sh-ico">📋</div><div class="sh-title">Reporte Consolidado</div><div class="sh-sub" id="rep-badge">—</div></div>
+  <div id="rep-empty" class="empty"><div class="empty-ico">📋</div><div class="empty-t">Ningún reporte generado</div><div class="empty-s">Configura el análisis y genera el reporte</div></div>
+  <div id="rep-body" style="display:none">
+    <div class="exp-hdr">
+      <div><div class="exp-title" id="exp-title">—</div><div class="exp-meta" id="exp-meta">—</div></div>
+      <div class="btn-group" id="btn-area">
+        <button class="btn btn-gold" onclick="dlCSV()">⬇ CSV</button>
+        <button class="btn btn-green" onclick="showP('p-export',4)">📥 Exportar XLSM</button>
+        <button class="btn btn-pdf" onclick="saveReportePDF()" style="padding:11px 20px;font-size:11px;">📄 Guardar PDF</button>
+      </div>
+    </div>
+
+    <!-- ÁREA IMPRIMIBLE DEL REPORTE -->
+    <div id="reporte-pdf-area">
+      <!-- Cabecera institucional del reporte -->
+      <div id="rep-inst-header" style="
+        display:none;
+        background:linear-gradient(135deg,#003520,#005030);
+        border-radius:10px;padding:20px 28px;margin-bottom:18px;
+        border:1px solid var(--bd2);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      ">
+        <div style="display:flex;align-items:center;gap:18px;">
+          <div style="
+            width:60px;height:60px;flex-shrink:0;
+            background:linear-gradient(135deg,var(--cr),var(--cr-d));
+            clip-path:polygon(50% 0%,100% 20%,100% 65%,50% 100%,0% 65%,0% 20%);
+            display:flex;align-items:center;justify-content:center;
+            font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:12px;
+            color:var(--gold-l);box-shadow:0 0 20px var(--cr-glow);
+          ">PNP</div>
+          <div style="flex:1;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;color:var(--gold-l);letter-spacing:.12em;text-transform:uppercase;">POLICÍA NACIONAL DEL PERÚ</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;margin-top:2px;">Región Policial Amazonas · Estado Mayor · Estadística Operacional</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.06em;text-transform:uppercase;" id="rep-fecha-gen">—</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:rgba(255,255,255,.3);margin-top:3px;letter-spacing:.05em;" id="rep-clasif-lbl">USO INTERNO</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gkpi" id="kpi-grid"></div>
+      <div class="g2" style="margin-bottom:18px;">
+        <div class="card"><div class="card-t">Ranking: Operativos</div><div id="rk-ops"></div></div>
+        <div class="card"><div class="card-t">Ranking: Detenidos Delitos</div><div id="rk-det"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-t">Tabla Completa de Indicadores</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;" class="no-pdf">
+          <input type="text" id="tbl-q" placeholder="Buscar indicador..." style="max-width:260px;" oninput="filterTbl()">
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx3);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:.05em;text-transform:uppercase;">
+            <input type="checkbox" id="hide-zero" onchange="filterTbl()"> Ocultar ceros
+          </label>
+        </div>
+        <div class="tbl-wrap"><table class="dt" id="dtbl"></table></div>
+      </div>
+    </div><!-- /reporte-pdf-area -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PANEL 4: EXPORTAR
+═══════════════════════════════════════ -->
+<div class="panel" id="p-export">
+  <div class="sh"><div class="sh-ico">💾</div><div class="sh-title">Exportar a Excel (XLSM)</div><div class="sh-sub">Con hoja de análisis de datos</div></div>
+  <div class="card">
+    <div class="card-t">Configuración de exportación</div>
+    <div class="g2" style="margin-bottom:16px;">
+      <div><label class="lbl">Nombre del archivo</label><input type="text" id="exp-fname" placeholder="Consolidado_PNP_Amazonas"></div>
+      <div>
+        <label class="lbl">Clasificación del documento</label>
+        <select id="exp-class">
+          <option>USO INTERNO</option>
+          <option>RESERVADO</option>
+          <option>CONFIDENCIAL</option>
+          <option>PÚBLICO</option>
+        </select>
+      </div>
+    </div>
+    <div class="card-t">Hojas a incluir</div>
+    <div class="pills" style="margin-bottom:12px;">
+      <div class="pill on" data-sheet="datos">Hoja: Datos</div>
+      <div class="pill on" data-sheet="analisis">Hoja: Análisis</div>
+      <div class="pill on" data-sheet="ranking">Hoja: Ranking</div>
+      <div class="pill on" data-sheet="comparacion" id="pill-cmp">Hoja: Comp. Años</div>
+    </div>
+    <button class="btn btn-green btn-lg" id="exp-btn" onclick="exportXLSX()">
+      📥 Generar y Descargar XLSM
+    </button>
+    <div class="status" id="st-exp"></div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+<div class="wmk">PNP · Región Policial Amazonas · Sistema Estadístico Operacional v4.0 · Clasificación: <span id="wmk-class">Uso Interno</span></div>
+
+<!-- ═══════════════════════════════════════
+     LOADING OVERLAY
+═══════════════════════════════════════ -->
+<div class="load-overlay" id="global-loader" style="display:none">
+  <div class="load-spinner"></div>
+  <div class="load-msg" id="loader-msg">Cargando datos...</div>
+  <div class="load-sub" id="loader-sub">Conectando con Google Drive</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL: LOGIN ADMIN
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-login" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-login')">✕</button>
+    <div class="shield-lg">PNP</div>
+    <div class="modal-title">Acceso Administrativo</div>
+    <div class="modal-sub">Ingrese la contraseña para acceder al panel de administración</div>
+    <div class="modal-field">
+      <label>Contraseña</label>
+      <input type="password" id="admin-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')verifyAdmin()">
+      <div class="modal-err" id="login-err">⚠ Contraseña incorrecta. Intente nuevamente.</div>
+    </div>
+    <button class="btn btn-red btn-full btn-lg" onclick="verifyAdmin()">🔐 Ingresar</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL: PANEL ADMIN
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-admin" style="display:none">
+  <div class="modal-box" style="max-width:600px;">
+    <button class="modal-close" onclick="closeModal('modal-admin')">✕</button>
+    <div class="modal-title">🔐 Panel de Administración</div>
+    <div class="modal-sub">Solo visible para el administrador del sistema · REGPOL Amazonas</div>
+
+    <!-- Sección: URL del archivo -->
+    <div class="admin-panel">
+      <div class="admin-panel-t">📊 Archivo Excel en Google Drive</div>
+      <div class="admin-panel-s">Pega aquí el enlace de compartir de Google Drive. El archivo debe estar compartido como "Cualquiera con el enlace puede ver".</div>
+      <div class="modal-field" style="margin-bottom:10px;">
+        <label>URL de Google Drive (enlace compartido)</label>
+        <div class="url-input-wrap">
+          <input type="text" id="admin-drive-url" placeholder="https://drive.google.com/file/d/XXXX/view?usp=sharing">
+          <button class="btn btn-gold" onclick="saveAdminDriveUrl()">💾 Guardar</button>
+        </div>
+        <div class="url-preview" id="url-preview-lbl">— sin URL configurada —</div>
+      </div>
+      <button class="btn btn-green btn-full" onclick="saveAdminDriveUrl();closeModal('modal-admin');loadFromDrive()">
+        💾 Guardar y Recargar Datos
+      </button>
+    </div>
+
+    <!-- Sección: Cambiar contraseña -->
+    <div class="admin-panel" style="margin-top:14px;">
+      <div class="admin-panel-t">🔑 Cambiar Contraseña</div>
+      <div class="admin-panel-s">La contraseña se guarda en este navegador. Recuérdela bien.</div>
+      <div class="g2" style="gap:10px;margin-bottom:10px;">
+        <div class="modal-field" style="margin:0;">
+          <label>Nueva contraseña</label>
+          <input type="password" id="new-pwd" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="modal-field" style="margin:0;">
+          <label>Confirmar contraseña</label>
+          <input type="password" id="new-pwd2" placeholder="Repetir contraseña">
+        </div>
+      </div>
+      <div class="modal-err" id="pwd-err" style="margin-bottom:10px;"></div>
+      <button class="btn btn-out" onclick="changePwd()">🔑 Cambiar Contraseña</button>
+    </div>
+
+    <!-- Sección: Info -->
+    <div style="background:var(--bg3);border-radius:8px;padding:14px 16px;margin-top:14px;font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;line-height:1.7;">
+      <strong style="color:var(--tx2);display:block;margin-bottom:6px;">📋 Instrucciones para actualizar datos:</strong>
+      1. Sube el nuevo archivo .xlsx a Google Drive<br>
+      2. Clic derecho → "Compartir" → "Cualquiera con el enlace" → "Visualizador"<br>
+      3. Copia el enlace y pégalo arriba<br>
+      4. Clic en "Guardar y Recargar Datos"<br>
+      5. Los usuarios verán los datos actualizados automáticamente
+    </div>
+
+    <div style="margin-top:14px;text-align:right;">
+      <button class="btn btn-out" onclick="adminLogout()">Cerrar Sesión Admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     JAVASCRIPT ENGINE
+══════════════════════════════════════════════════════════ -->
+<script>
+// ──────────────────────────────────────
+//  CONSTANTES
+// ──────────────────────────────────────
+const MONTHS=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+const MNAMES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+const IMAP={
+  'OPERATIVOS':               {keys:['OPERATIVOS'],cat:'ops'},
+  'DETENIDOS RQ':             {keys:['DETENIDOS POR REQUISITORIAS (RQ)'],cat:'ops'},
+  'DETENIDOS DELITOS PER.':   {keys:['DETENIDOS POR DIV. DELITOS - PERUANOS (MAYORES DE EDAD)'],cat:'ops'},
+  'DETENIDOS DELITOS EXT.':   {keys:['DETENIDOS POR DIV. DELITOS - EXTRANJEROS (MAYORES DE EDAD)'],cat:'ops'},
+  'RETENIDOS MENORES EDAD':   {keys:['RETENIDOS (MENORES DE EDAD POR DIVERSOS DELITOS)'],cat:'ops'},
+  'PBC - ENVOLTORIOS':        {keys:['DROGA DECOMISADA ENVOLTORIOS - PBC'],cat:'drog'},
+  'CC - ENVOLTORIOS':         {keys:['DROGA DECOMISADA ENVOLTORIOS - CC'],cat:'drog'},
+  'MARIHUANA - ENVOLTORIOS':  {keys:['DROGA DECOMISADA ENVOLTORIOS - MARIHUANA'],cat:'drog'},
+  'PBC - KG':                 {keys:['DROGA DECOMISADA      KILOGRAMOS - PBC'],cat:'drog'},
+  'CC - KG':                  {keys:['DROGA DECOMISADA KILOGRAMOS - CC'],cat:'drog'},
+  'MARIHUANA - KG':           {keys:['DROGA DECOMISADA      KILOGRAMOS - MARIHUANA'],cat:'drog'},
+  'HOJA DE COCA (KG)':        {keys:['HOJA DE COCA EN KGS.','PERSONAS DESAPARECIDAS UBICADA - HOJA DE COCA (KG)'],cat:'drog'},
+  'ARMAS DE FUEGO':           {keys:['ARMAS - ARMAS DE FUEGO (HALLAZGO, INCAUTADAS Y ENTREGA VOLUNTARIA)'],cat:'arm'},
+  'ARMAS BLANCAS':            {keys:['ARMAS - ARMAS BLANCAS'],cat:'arm'},
+  'VEH MAYOR - INCAUTACION':  {keys:['VEHICULOS MAYORES - INCAUTACION'],cat:'veh'},
+  'VEH MAYOR - ORD.CAPTURA':  {keys:['VEHICULOS MAYORES - RQ JUDICIAL','VEHICULOS MAYORES - RQ CAPTURA POR DELITO','VEHICULOS MAYORES - RQ ADMINISTRATIVO O SAT','VEHICULOS MAYORES - VEHICULOS CON OC'],cat:'veh'},
+  'VEH MAYOR - RECUPERADOS':  {keys:['VEHICULOS MAYORES - RECUPERADO','VEHICULOS MAYORES - RECUPERADO EN FLAGRANCIA','VEHICULOS MAYORES - VEHICULOS RECUPERADOS'],cat:'veh'},
+  'VEH MAYOR - DOV':          {keys:['VEHICULOS MAYORES - INTERNAMIENTO AL DEPOSITO OFICIAL'],cat:'veh'},
+  'VEH MENOR - INCAUTACION':  {keys:['VEHICULOS MENORES - INCAUTACION'],cat:'veh'},
+  'VEH MENOR - ORD.CAPTURA':  {keys:['VEHICULOS MENORES - RQ JUDICIAL','VEHICULOS MENORES - RQ CAPTURA POR DELITO','VEHICULOS MENORES - RQ ADMINISTRATIVO O SAT','VEHICULOS MENORES - VEHICULOS CON OC'],cat:'veh'},
+  'VEH MENOR - RECUPERADOS':  {keys:['VEHICULOS MENORES - RECUPERADO','VEHICULOS MENORES - RECUPERADO EN FLAGRANCIA','VEHICULOS MENORES - VEHICULOS RECUPERADOS'],cat:'veh'},
+  'VEH MENOR - DOV':          {keys:['VEHICULOS MENORES - INTERNAMIENTO AL DEPOSITO OFICIAL'],cat:'veh'},
+  'PAPELETAS I.R.N.T.':       {keys:['PAPELETA','PAPELETAS IMPUESTAS IRNT'],cat:'ops'},
+  'BANDAS DESARTICULADAS':    {keys:['BANDAS CRIMINALES DESARTICULADAS'],cat:'ops'},
+  'ORGANIZACIONES CRIMINALES':{keys:['ORGANIZACIONES CRIMINALES DESARTICULADAS','ORGANIZACION CRIMINAL DESARTICULADA'],cat:'ops'},
+  'MEDIDAS DE PROTECCION':    {keys:['MEDIDAS DE PROTECCIÓN','MEDIDAS DE PROTECCION'],cat:'ops'},
+  'COMBUSTIBLE (Gls)':        {keys:['COMBUSTIBLE (galones)','COMBUSTIBLE','COMBUSTIBLE (GALONES)'],cat:'ops'},
+  'MADERA DECOMISADA (Pies)': {keys:['MADERA','MADERA DECOMISADA (PIES TABLARES)'],cat:'ops'},
+  'DINERO INCAUTADO (S/.)':   {keys:['DINERO - SOLES','DINERO INCAUTADO (SOLES)'],cat:'ops'},
+  'CELULARES INCAUTADOS':     {keys:['CELULARES INCAUTADOS'],cat:'ops'},
+};
+
+// ──────────────────────────────────────
+//  ESTADO GLOBAL
+// ──────────────────────────────────────
+let WB={}, availYears=[], mode='division';
+let selUnitsSet=new Set(), selIndsSet=new Set(), mRange=[];
+let rData=null;
+let dashMRange=[], dashMRangeD=[];
+
+// ──────────────────────────────────────
+//  RELOJ
+// ──────────────────────────────────────
+function updClk(){
+  const n=new Date(),p=x=>String(x).padStart(2,'0');
+  const s=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds())+' · '+n.toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+  document.getElementById('clk').textContent=s;
+}
+updClk();setInterval(updClk,1000);
+
+// ──────────────────────────────────────
+//  NAV
+// ──────────────────────────────────────
+function showP(id,idx){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('on',i===idx));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ──────────────────────────────────────
+//  STATUS
+// ──────────────────────────────────────
+function setSt(id,type,msg){
+  const el=document.getElementById(id);
+  el.className='status '+type;el.innerHTML=msg;
+}
+
+// ──────────────────────────────────────
+//  UTILIDADES
+// ──────────────────────────────────────
+function shortN(name){
+  return name
+    .replace(/DIVOPUS PNP\s*/i,'')
+    .replace(/DIVINCRI PNP\s*/i,'')
+    .replace(/DIVISION DE ORDEN Y SEGURIDAD\s*/i,'DOS ')
+    .replace(/DUE PNP\s*/i,'DUE ')
+    .replace(/COMISARIA\s+/i,'COM. ')
+    .replace(/COMISARÍA\s+/i,'COM. ')
+    .trim();
+}
+
+function isKgInd(k){return ['PBC - KG','CC - KG','MARIHUANA - KG','HOJA DE COCA (KG)','MADERA DECOMISADA (Pies)','COMBUSTIBLE (Gls)','DINERO INCAUTADO (S/.)'].includes(k);}
+
+function fmtVal(k,v){
+  if(isKgInd(k)&&v!==Math.round(v))return v.toFixed(3);
+  if(k==='DINERO INCAUTADO (S/.)')return v.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return v.toLocaleString();
+}
+
+function getUnitOfRow(r){
+  const candidates=mode==='division'?['DIVISION','DIVISIÓN']:['COMISARIA','COMISARÍA','COMISARIA PNP','SUBUNIDAD'];
+  for(const c of candidates){const v=r[c.toUpperCase()]||r[c];if(v)return v;}
+  return null;
+}
+
+function getUnitOfRowByGroup(r,grp){
+  if(grp==='division'||grp==='region'){
+    const v=r['DIVISION']||r['DIVISIÓN'];return v||null;
+  }
+  if(grp==='comisaria'){
+    const v=r['COMISARIA']||r['COMISARÍA']||r['COMISARIA PNP']||r['SUBUNIDAD'];return v||null;
+  }
+  if(grp==='provincia'){
+    const v=r['PROVINCIA']||r['PROV']||r['DIVISION']||r['DIVISIÓN'];return v||null;
+  }
+  return null;
+}
+
+// Calcular total de indicador para un año con filtro de periodo
+function calcIndYr(yr,indKeys,periodType,mRng,dFrom,dTo,groupFilter,unitFilter){
+  if(!WB[yr]) return 0;
+  let rows=WB[yr];
+  rows=filterRowsByPeriod(rows,periodType,mRng,dFrom,dTo);
+  if(unitFilter&&unitFilter!==''){
+    rows=rows.filter(r=>{
+      const u=getUnitOfRowByGroup(r,'division')||getUnitOfRowByGroup(r,'comisaria')||'';
+      return u===unitFilter;
+    });
+  }
+  return rows.filter(r=>indKeys.includes((r['TIPO INDICADOR']||'').trim()))
+             .reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0);
+}
+
+function filterRowsByPeriod(rows,pt,mRng,dFrom,dTo){
+  if(pt==='full') return rows;
+  if(pt==='months'&&mRng&&mRng.length===2){
+    return rows.filter(r=>{
+      const mi=MONTHS.indexOf((r['MES']||'').toString().trim().toUpperCase());
+      return mi>=mRng[0]&&mi<=mRng[1];
+    });
+  }
+  if(pt==='days'&&dFrom&&dTo){
+    return rows.filter(r=>{const d=r['FECHA']?new Date(r['FECHA']):null;return d&&d>=dFrom&&d<=dTo;});
+  }
+  return rows;
+}
+
+// ──────────────────────────────────────
+//  ADMIN AUTH & CONFIG (localStorage)
+// ──────────────────────────────────────
+const ADMIN_PWD_KEY  = 'pnp_admin_pwd_hash';
+const DRIVE_URL_KEY  = 'pnp_drive_url';
+const ADMIN_SESS_KEY = 'pnp_admin_session';
+const DEFAULT_PWD    = 'PNP2025'; // ← contraseña inicial (cámbiala tras primer acceso)
+
+function simpleHash(str){
+  let h=0;for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;}return h.toString(36);
+}
+function getStoredPwd(){return localStorage.getItem(ADMIN_PWD_KEY)||simpleHash(DEFAULT_PWD);}
+function getDriveUrl(){return localStorage.getItem(DRIVE_URL_KEY)||'';}
+function isAdminSession(){return sessionStorage.getItem(ADMIN_SESS_KEY)==='1';}
+
+function openAdminModal(){
+  if(isAdminSession()){showAdminPanel();return;}
+  document.getElementById('admin-pwd').value='';
+  document.getElementById('login-err').style.display='none';
+  document.getElementById('modal-login').style.display='flex';
+  setTimeout(()=>document.getElementById('admin-pwd').focus(),100);
+}
+function verifyAdmin(){
+  const pwd=document.getElementById('admin-pwd').value;
+  if(simpleHash(pwd)===getStoredPwd()||pwd===DEFAULT_PWD){
+    sessionStorage.setItem(ADMIN_SESS_KEY,'1');
+    closeModal('modal-login');
+    showAdminPanel();
+  } else {
+    document.getElementById('login-err').style.display='block';
+    document.getElementById('admin-pwd').value='';
+    document.getElementById('admin-pwd').focus();
+  }
+}
+function showAdminPanel(){
+  const url=getDriveUrl();
+  document.getElementById('admin-drive-url').value=url;
+  updateUrlPreview(url);
+  document.getElementById('new-pwd').value='';
+  document.getElementById('new-pwd2').value='';
+  document.getElementById('pwd-err').style.display='none';
+  document.getElementById('modal-admin').style.display='flex';
+}
+function saveAdminDriveUrl(){
+  const url=document.getElementById('admin-drive-url').value.trim();
+  if(!url){alert('Ingrese una URL de Google Drive.');return;}
+  localStorage.setItem(DRIVE_URL_KEY,url);
+  updateUrlPreview(url);
+}
+function updateUrlPreview(url){
+  const el=document.getElementById('url-preview-lbl');
+  if(!url){el.innerHTML='— sin URL configurada —';return;}
+  const id=extractDriveId(url);
+  el.innerHTML=id?`ID detectado: <span>${id}</span>`:`<span style="color:var(--am-l)">⚠ No se detectó un ID válido de Drive. Verifica la URL.</span>`;
+}
+function changePwd(){
+  const p1=document.getElementById('new-pwd').value;
+  const p2=document.getElementById('new-pwd2').value;
+  const errEl=document.getElementById('pwd-err');
+  errEl.style.display='block';
+  if(p1.length<6){errEl.textContent='⚠ La contraseña debe tener al menos 6 caracteres.';return;}
+  if(p1!==p2){errEl.textContent='⚠ Las contraseñas no coinciden.';return;}
+  localStorage.setItem(ADMIN_PWD_KEY,simpleHash(p1));
+  errEl.textContent='✓ Contraseña actualizada correctamente.';
+  errEl.style.color='var(--gr-l)';
+  document.getElementById('new-pwd').value='';
+  document.getElementById('new-pwd2').value='';
+}
+function adminLogout(){
+  sessionStorage.removeItem(ADMIN_SESS_KEY);
+  closeModal('modal-admin');
+}
+function closeModal(id){document.getElementById(id).style.display='none';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal('modal-login');closeModal('modal-admin');}});
+
+// ──────────────────────────────────────
+//  GOOGLE DRIVE LOADER
+// ──────────────────────────────────────
+function extractDriveId(url){
+  const m=url.match(/\/d\/([a-zA-Z0-9_-]{20,})/)||url.match(/id=([a-zA-Z0-9_-]{20,})/);
+  return m?m[1]:null;
+}
+function buildDriveExportUrl(id){
+  // Usa el endpoint de exportación directa de Drive
+  return `https://drive.google.com/uc?export=download&id=${id}&confirm=t`;
+}
+
+function setDriveStatus(state,title,sub){
+  const dot=document.getElementById('drive-dot');
+  const t=document.getElementById('drive-status-t');
+  const s=document.getElementById('drive-status-s');
+  dot.className='drive-dot '+state;
+  t.textContent=title;
+  s.textContent=sub||'';
+}
+
+function showLoader(msg,sub){
+  document.getElementById('loader-msg').textContent=msg||'Cargando...';
+  document.getElementById('loader-sub').textContent=sub||'';
+  document.getElementById('global-loader').style.display='flex';
+}
+function hideLoader(){document.getElementById('global-loader').style.display='none';}
+
+async function loadFromDrive(){
+  const url=getDriveUrl();
+  document.getElementById('load-ok').style.display='none';
+  document.getElementById('load-err').style.display='none';
+
+  if(!url){
+    setDriveStatus('disconnected','Sin archivo configurado','El administrador debe configurar el enlace de Google Drive');
+    document.getElementById('load-err-msg').textContent='No hay un archivo Excel configurado. El administrador debe ingresar el enlace desde el panel Admin (🔐).';
+    document.getElementById('load-err').style.display='block';
+    return;
+  }
+  const id=extractDriveId(url);
+  if(!id){
+    setDriveStatus('disconnected','URL inválida','El enlace de Drive no contiene un ID de archivo válido');
+    document.getElementById('load-err-msg').textContent='La URL configurada no es válida. Revise el panel Admin.';
+    document.getElementById('load-err').style.display='block';
+    return;
+  }
+
+  setDriveStatus('loading','Conectando con Google Drive...','Descargando archivo Excel');
+  showLoader('Descargando datos...','Conectando con Google Drive · Por favor espere');
+
+  try{
+    const exportUrl=buildDriveExportUrl(id);
+    const resp=await fetch(exportUrl);
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}: No se pudo descargar el archivo`);
+    const arrayBuffer=await resp.arrayBuffer();
+    hideLoader();
+    processExcelBuffer(arrayBuffer,'Google Drive');
+  }catch(err){
+    hideLoader();
+    // Intento alternativo con proxy CORS si el fetch directo falla
+    try{
+      showLoader('Reintentando...','Usando proxy alternativo');
+      const proxyUrl=`https://corsproxy.io/?${encodeURIComponent(buildDriveExportUrl(id))}`;
+      const resp2=await fetch(proxyUrl);
+      if(!resp2.ok) throw new Error(`Proxy HTTP ${resp2.status}`);
+      const buf=await resp2.arrayBuffer();
+      hideLoader();
+      processExcelBuffer(buf,'Google Drive (proxy)');
+    }catch(err2){
+      hideLoader();
+      setDriveStatus('disconnected','Error de conexión',err.message);
+      document.getElementById('load-err-msg').textContent=`Error: ${err.message}. Verifique que el archivo esté compartido correctamente (acceso público de solo lectura).`;
+      document.getElementById('load-err').style.display='block';
+    }
+  }
+}
+
+function processExcelBuffer(arrayBuffer, source){
+  try{
+    const data=new Uint8Array(arrayBuffer);
+    const wb=XLSX.read(data,{type:'array',cellDates:true});
+    WB={};availYears=[];
+    wb.SheetNames.forEach(name=>{
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{defval:null,raw:false});
+      if(rows.length>0){
+        const norm=rows.map(r=>{const n={};Object.entries(r).forEach(([k,v])=>{n[k.trim().toUpperCase()]=typeof v==='string'?v.trim():v;});return n;});
+        const sample=norm[0];
+        const hasDivision=Object.keys(sample).some(k=>k.includes('DIVISION')||k.includes('DIVISIÓN'));
+        if(hasDivision){WB[name]=norm;availYears.push(name);}
+      }
+    });
+    if(!availYears.length){
+      setDriveStatus('disconnected','Archivo sin hojas válidas','Verifica que el Excel tenga columnas: DIVISION, MES, TIPO INDICADOR, CANTIDAD');
+      document.getElementById('load-err-msg').textContent='No se encontraron hojas válidas. El archivo debe tener columnas: DIVISION, MES, TIPO INDICADOR, CANTIDAD.';
+      document.getElementById('load-err').style.display='block';
+      return;
+    }
+    let totalRows=0;const allDivs=new Set(),allComs=new Set(),colsFound=new Set();
+    availYears.forEach(y=>{WB[y].forEach(r=>{totalRows++;const d=r['DIVISION']||r['DIVISIÓN'];if(d)allDivs.add(d);const c=r['COMISARIA']||r['COMISARÍA']||r['COMISARIA PNP']||r['SUBUNIDAD'];if(c)allComs.add(c);Object.keys(r).forEach(k=>colsFound.add(k));});});
+
+    const now=new Date();
+    document.getElementById('last-update-lbl').textContent=now.toLocaleString('es-PE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).toUpperCase();
+
+    document.getElementById('load-kpi').innerHTML=`
+      <div class="kpi k-gold"><div class="kpi-lbl">Años</div><div class="kpi-val">${availYears.length}</div><div class="kpi-sub">${availYears.slice(0,4).join(' · ')}</div></div>
+      <div class="kpi"><div class="kpi-lbl">Registros</div><div class="kpi-val">${totalRows.toLocaleString()}</div></div>
+      <div class="kpi k-green"><div class="kpi-lbl">Divisiones</div><div class="kpi-val">${allDivs.size}</div></div>
+      <div class="kpi k-blue"><div class="kpi-lbl">Comisarías</div><div class="kpi-val">${allComs.size}</div></div>
+      <div class="kpi k-amber"><div class="kpi-lbl">Indicadores</div><div class="kpi-val">${Object.keys(IMAP).length}</div></div>`;
+
+    const yp=document.getElementById('yr-pills');yp.innerHTML='';
+    availYears.forEach(y=>{const p=document.createElement('div');p.className='pill on';p.textContent=y;yp.appendChild(p);});
+    const cp=document.getElementById('col-pills');cp.innerHTML='';
+    ['DIVISION','MES','TIPO INDICADOR','CANTIDAD','COMISARIA','FECHA'].forEach(c=>{
+      const found=[...colsFound].some(k=>k.includes(c));
+      const p=document.createElement('div');p.className='pill'+(found?' on':'');p.textContent=(found?'✓ ':'✗ ')+c;p.style.cursor='default';cp.appendChild(p);
+    });
+
+    const yrMainSel=document.getElementById('yr-main');
+    yrMainSel.innerHTML='<option value="">— Seleccionar —</option>';
+    availYears.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;yrMainSel.appendChild(o);});
+    document.getElementById('yr-main').onchange=function(){buildUnits();chkReady();};
+
+    buildIndPills();buildMGrid();
+    initDashSelectors();
+
+    document.getElementById('load-ok').style.display='block';
+    document.getElementById('load-err').style.display='none';
+    setDriveStatus('connected',`✓ Datos cargados · ${availYears.length} años · ${totalRows.toLocaleString()} registros`,`Fuente: ${source} · ${now.toLocaleTimeString('es-PE')}`);
+
+    // Mostrar dashboard
+    document.getElementById('dash-empty').style.display='none';
+    document.getElementById('dash-body').style.display='block';
+    document.getElementById('nb-dash').style.display='inline';
+    updAnalysis();
+
+  }catch(err){
+    setDriveStatus('disconnected','Error al procesar el archivo',err.message);
+    document.getElementById('load-err-msg').textContent='Error al procesar el Excel: '+err.message;
+    document.getElementById('load-err').style.display='block';
+    console.error(err);
+  }
+}
+
+// ──────────────────────────────────────
+//  DASHBOARD v5.1 — MOTOR DE ANÁLISIS
+// ──────────────────────────────────────
+
+const DIV_LIST=[
+  "DIVOPUS PNP CHACHAPOYAS",  // incluye DUE PNP AMAZONAS
+  "DIVOPUS PNP UTCUBAMBA",
+  "DIVOPUS PNP NIEVA","DIVINCRI PNP AMAZONAS"
+];
+
+const IMAP_DB={
+  'DETENIDOS':   ['DETENIDOS POR DIV. DELITOS - PERUANOS (MAYORES DE EDAD)'],
+  'REQUISITORIA':['DETENIDOS POR REQUISITORIAS (RQ)'],
+  'ARMAS_FUEGO': ['ARMAS - ARMAS DE FUEGO (HALLAZGO, INCAUTADAS Y ENTREGA VOLUNTARIA)'],
+  'ARMAS_BLANCAS':['ARMAS - ARMAS BLANCAS'],
+  'OPERATIVOS':  ['OPERATIVOS'],
+  'BANDAS':      ['BANDAS CRIMINALES DESARTICULADAS'],
+  'ORGANIZACIONES':['ORGANIZACIONES CRIMINALES DESARTICULADAS','ORGANIZACION CRIMINAL DESARTICULADA'],
+  'DROGA_ENV':   ['DROGA DECOMISADA ENVOLTORIOS - PBC','DROGA DECOMISADA ENVOLTORIOS - CC','DROGA DECOMISADA ENVOLTORIOS - MARIHUANA'],
+  'DROGA_KG':    ['DROGA DECOMISADA      KILOGRAMOS - PBC','DROGA DECOMISADA KILOGRAMOS - CC','DROGA DECOMISADA      KILOGRAMOS - MARIHUANA']
+};
+
+function initDashSelectors(){
+  const yS=document.getElementById('yr-sel');
+  const yC=document.getElementById('yr-comp');
+  const mF=document.getElementById('m-from');
+  const mT=document.getElementById('m-to');
+  [yS,yC].forEach(s=>{
+    s.innerHTML='';
+    availYears.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;s.appendChild(o);});
+  });
+  if(availYears.length>1) yC.selectedIndex=1;
+  mF.innerHTML='';mT.innerHTML='';
+  MONTHS.forEach((m,i)=>{
+    const o1=document.createElement('option');o1.value=i;o1.textContent=m;mF.appendChild(o1);
+    const o2=document.createElement('option');o2.value=i;o2.textContent=m;mT.appendChild(o2);
+  });
+  mT.selectedIndex=11;
+}
+
+function handleModeChange(){
+  const mode=document.getElementById('mode-sel').value;
+  const unitGroup=document.getElementById('group-units');
+  const unitSel=document.getElementById('unit-sel');
+  const unitLabel=document.getElementById('unit-label');
+  if(mode==='provincia'){
+    unitGroup.style.display='none';
+  } else {
+    unitGroup.style.display='flex';
+    unitSel.innerHTML='<option value="all">TODAS</option>';
+    if(mode==='division'){
+      unitLabel.textContent='Elegir División';
+      DIV_LIST.forEach(d=>{
+        const o=document.createElement('option');
+        o.value=d;
+        o.textContent=d.toUpperCase().includes('CHACHAPOYAS')?d+' + DUE PNP AMAZONAS':d;
+        unitSel.appendChild(o);
+      });
+    } else if(mode==='comisaria'){
+      unitLabel.textContent='Elegir Comisaría';
+      const yr=document.getElementById('yr-sel').value;
+      const rows=WB[yr]||[];
+      const coms=[...new Set(rows.map(r=>r['COMISARIA']||r['COMISARÍA']||r['SUBUNIDAD']).filter(Boolean))].sort();
+      coms.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;unitSel.appendChild(o);});
+    }
+  }
+  updAnalysis();
+}
+
+function toggleDateInputs(){
+  const p=document.getElementById('ptype').value;
+  document.getElementById('group-months').style.display=p==='months'?'flex':'none';
+  document.getElementById('group-days').style.display=p==='days'?'flex':'none';
+}
+
+function filterDataDB(yr,ptype){
+  let rows=WB[yr]||[];
+  const mode=document.getElementById('mode-sel').value;
+  const unitVal=(document.getElementById('unit-sel')||{}).value||'all';
+  if(mode!=='provincia'&&unitVal!=='all'){
+    if(mode==='division'){
+      rows=rows.filter(r=>{
+        const d=(r['DIVISION']||r['DIVISIÓN']||'').trim().toUpperCase();
+        // DIVOPUS PNP CHACHAPOYAS incluye también DUE PNP AMAZONAS
+        if(unitVal.toUpperCase().includes('CHACHAPOYAS')){
+          return d.includes('CHACHAPOYAS')||d.includes('DUE');
+        }
+        return d===unitVal.toUpperCase()||d.includes(unitVal.toUpperCase());
+      });
+    } else if(mode==='comisaria'){
+      rows=rows.filter(r=>(r['COMISARIA']||r['COMISARÍA']||r['SUBUNIDAD'])===unitVal);
+    }
+  }
+  if(ptype==='months'){
+    const f=parseInt(document.getElementById('m-from').value);
+    const t=parseInt(document.getElementById('m-to').value);
+    return rows.filter(r=>{const mi=MONTHS.indexOf((r['MES']||'').toString().toUpperCase());return mi>=f&&mi<=t;});
+  }
+  if(ptype==='days'){
+    const fromVal=document.getElementById('d-df').value;
+    const toVal=document.getElementById('d-dt').value;
+    if(!fromVal||!toVal) return rows;
+    const dF=new Date(fromVal+'T00:00:00');
+    const dT=new Date(toVal+'T23:59:59');
+    return rows.filter(r=>{const d=r['FECHA']?new Date(r['FECHA']):null;return d&&d>=dF&&d<=dT;});
+  }
+  return rows;
+}
+
+function calculateStatsDB(rows){
+  const stats={};
+  Object.keys(IMAP_DB).forEach(k=>{
+    const keys=IMAP_DB[k];
+    stats[k]=rows
+      .filter(r=>keys.some(key=>key.toUpperCase()===(r['TIPO INDICADOR']||'').trim().toUpperCase()))
+      .reduce((acc,r)=>acc+(parseFloat(r['CANTIDAD'])||0),0);
+  });
+  return stats;
+}
+
+function updAnalysis(){
+  const yC=document.getElementById('yr-sel').value;
+  const yP=document.getElementById('yr-comp').value;
+  const pt=document.getElementById('ptype').value;
+  if(!WB[yC]) return;
+  const dataC=filterDataDB(yC,pt);
+  const dataP=filterDataDB(yP,pt);
+  const statsC=calculateStatsDB(dataC);
+  const statsP=calculateStatsDB(dataP);
+  renderDashV51(statsC,statsP,yC,yP,pt);
+}
+
+function renderDashV51(c,p,yC,yP,pt){
+  // Actualizar años en cabeceras de tabla
+  document.querySelectorAll('.y-curr').forEach(el=>el.textContent=yC);
+  document.querySelectorAll('.y-prev').forEach(el=>el.textContent=yP);
+
+  // Título unidad central
+  const mode=document.getElementById('mode-sel').value;
+  const unitSel=document.getElementById('unit-sel');
+  const unitVal=unitSel?unitSel.value:'all';
+  let title='REGIÓN POLICIAL AMAZONAS';
+  if(mode!=='provincia'&&unitVal!=='all') title=unitVal;
+  document.getElementById('ops-unit-display').textContent=title;
+
+  // Periodo label
+  let pStr=pt==='full'?'ANUAL':pt==='months'?'RANGO MENSUAL':'POR FECHAS';
+  if(pt==='days'){
+    const df=document.getElementById('d-df').value;
+    const dt=document.getElementById('d-dt').value;
+    if(df&&dt){
+      const f1=new Date(df+'T00:00:00').toLocaleDateString('es-PE',{day:'2-digit',month:'short'}).toUpperCase();
+      const f2=new Date(dt+'T00:00:00').toLocaleDateString('es-PE',{day:'2-digit',month:'short'}).toUpperCase();
+      pStr=`${f1} AL ${f2}`;
+    }
+  } else if(pt==='months'){
+    const mf=MONTHS[parseInt(document.getElementById('m-from').value)];
+    const mt=MONTHS[parseInt(document.getElementById('m-to').value)];
+    pStr=mf===mt?mf:`${mf} – ${mt}`;
+  }
+  document.getElementById('db-period-lbl').textContent=`PERIODO: ${pStr} | COMPARATIVA ${yP} - ${yC}`;
+  document.getElementById('db-ts').textContent=`REPORTE OFICIAL GENERADO: ${new Date().toLocaleString('es-PE')}`;
+
+  const setV=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=Math.round(val).toLocaleString('es-PE'); };
+  const setK=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val.toFixed(3); };
+
+  setV('v-det-c',c.DETENIDOS);   setV('v-det-p',p.DETENIDOS);
+  setV('v-rq-c',c.REQUISITORIA); setV('v-rq-p',p.REQUISITORIA);
+  setV('v-af-c',c.ARMAS_FUEGO);  setV('v-af-p',p.ARMAS_FUEGO);
+  setV('v-ab-c',c.ARMAS_BLANCAS);setV('v-ab-p',p.ARMAS_BLANCAS);
+  setV('v-ops-c',c.OPERATIVOS);  setV('v-ops-p',p.OPERATIVOS);
+  setV('v-ban-c',c.BANDAS);      setV('v-ban-p',p.BANDAS);
+  setV('v-org-c',c.ORGANIZACIONES);setV('v-org-p',p.ORGANIZACIONES);
+  setV('v-env-c',c.DROGA_ENV);   setV('v-env-p',p.DROGA_ENV);
+  setK('v-kg-c',c.DROGA_KG);     setK('v-kg-p',p.DROGA_KG);
+}
+
+async function saveAsPDF(){
+  const btn=document.querySelector('.btn-pdf');
+  const origTxt=btn?btn.innerHTML:'';
+  if(btn){btn.innerHTML='⏳ Capturando...';btn.disabled=true;}
+
+  try{
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+    // Capturar SOLO el dashboard-visual (no el wrapper con padding)
+    const target = document.querySelector('.dashboard-visual');
+    if(!target){alert('Dashboard no visible');if(btn){btn.innerHTML=origTxt;btn.disabled=false;}return;}
+
+    // Obtener dimensiones reales del elemento en pantalla
+    const rect = target.getBoundingClientRect();
+    const dpr  = window.devicePixelRatio || 1;
+
+    const canvas = await html2canvas(target, {
+      scale       : 2,                        // escala fija ×2 para nitidez
+      backgroundColor: '#000000',
+      useCORS     : true,
+      logging     : false,
+      x           : 0,
+      y           : 0,
+      width       : rect.width,              // ancho exacto del elemento
+      height      : rect.height,             // alto exacto del elemento
+      scrollX     : 0,
+      scrollY     : 0,
+      windowWidth : Math.max(rect.width, 1300),
+      onclone     : function(doc){
+        // Asegurar fondo negro y detener animaciones en el clon
+        const dv = doc.querySelector('.dashboard-visual');
+        if(dv){
+          dv.style.cssText += ';background:#000000!important;animation:none!important;';
+          // Ancho fijo para que el grid no colapse
+          dv.style.width = rect.width + 'px';
+          dv.style.minWidth = rect.width + 'px';
+        }
+        // Detener rotación del ops-core
+        doc.querySelectorAll('.ops-core').forEach(el=>{
+          el.style.animation='none';
+          el.style.overflow='visible';
+        });
+        // Gradientes visibles
+        doc.querySelectorAll('.db-card-hdr').forEach(el=>{
+          el.style.webkitPrintColorAdjust='exact';
+          el.style.printColorAdjust='exact';
+        });
+      }
+    });
+
+    // A4 landscape: 297 × 210 mm
+    const {jsPDF} = window.jspdf;
+    const pdf  = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+    const pageW = pdf.internal.pageSize.getWidth();   // 297
+    const pageH = pdf.internal.pageSize.getHeight();  // 210
+    const mg    = 5;  // margen mm
+
+    // Calcular escala para que la imagen llene la página sin recortar
+    const availW = pageW - mg*2;
+    const availH = pageH - mg*2;
+    const imgAspect = canvas.width / canvas.height;   // ratio real del canvas
+    const pageAspect= availW / availH;
+
+    let drawW, drawH;
+    if(imgAspect > pageAspect){
+      // Imagen más ancha → ajustar por ancho
+      drawW = availW;
+      drawH = availW / imgAspect;
+    } else {
+      // Imagen más alta → ajustar por alto
+      drawH = availH;
+      drawW = availH * imgAspect;
+    }
+
+    // Centrar en la página
+    const offX = mg + (availW - drawW) / 2;
+    const offY = mg + (availH - drawH) / 2;
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.97);
+    pdf.addImage(imgData, 'JPEG', offX, offY, drawW, drawH);
+
+    // Nombre de archivo
+    const yC = (document.getElementById('yr-sel')||{}).value||'';
+    const pr  = ((document.getElementById('db-period-lbl')||{}).textContent||'')
+                  .replace('PERIODO:','').replace(/[|<>:"\/\\?*\s]+/g,'_').trim().substring(0,45);
+    pdf.save(`Reporte_REGPOL_Amazonas_${yC}_${pr}.pdf`);
+
+  } catch(err){
+    console.error('PDF error:', err);
+    // Fallback: guardar como PNG
+    try{
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      const t = document.querySelector('.dashboard-visual');
+      const c = await html2canvas(t,{scale:2,backgroundColor:'#000000',useCORS:true,logging:false});
+      const a = document.createElement('a');
+      a.download='Dashboard_REGPOL_Amazonas.png';
+      a.href = c.toDataURL('image/png');
+      a.click();
+    } catch(e){ alert('Error al exportar. Use Google Chrome.'); }
+  } finally {
+    if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
+  }
+}
+
+function loadScript(src){
+  return new Promise((resolve,reject)=>{
+    const existing=document.querySelector(`script[src="${src}"]`);
+    if(existing){
+      if(src.includes('html2canvas')&&typeof html2canvas!=='undefined'){resolve();return;}
+      if(src.includes('jspdf')&&window.jspdf){resolve();return;}
+    }
+    const s=document.createElement('script');
+    s.src=src;
+    s.onload=()=>resolve();
+    s.onerror=()=>reject(new Error('No se pudo cargar: '+src));
+    document.head.appendChild(s);
+  });
+}
+
+// ──────────────────────────────────────
+//  GUARDAR PDF DEL REPORTE
+// ──────────────────────────────────────
+async function saveReportePDF(){
+  if(!rData){alert('Genera un reporte primero.');return;}
+  const btn=document.querySelector('#btn-area .btn-pdf');
+  const origTxt=btn?btn.innerHTML:'';
+  if(btn){btn.innerHTML='⏳ Generando PDF...';btn.disabled=true;}
+
+  try{
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+    // Mostrar cabecera institucional para el PDF
+    const hdr=document.getElementById('rep-inst-header');
+    const fechaEl=document.getElementById('rep-fecha-gen');
+    const clasificEl=document.getElementById('rep-clasif-lbl');
+    const now=new Date();
+    if(fechaEl) fechaEl.textContent='Generado: '+now.toLocaleString('es-PE');
+    const expClass=document.getElementById('exp-class');
+    if(clasificEl&&expClass) clasificEl.textContent=expClass.value||'USO INTERNO';
+    if(hdr) hdr.style.display='block';
+
+    // Ocultar controles que no van en el PDF
+    document.querySelectorAll('.no-pdf').forEach(el=>el.style.display='none');
+
+    const target=document.getElementById('reporte-pdf-area');
+    const rect=target.getBoundingClientRect();
+
+    const canvas=await html2canvas(target,{
+      scale:2,
+      backgroundColor:'#04080a',
+      useCORS:true,
+      logging:false,
+      width:rect.width,
+      height:rect.height,
+      scrollX:0,
+      scrollY:-window.scrollY,
+      windowWidth:Math.max(rect.width,1200),
+      onclone:function(doc){
+        // Asegurar visibilidad correcta en el clon
+        const h=doc.getElementById('rep-inst-header');
+        if(h) h.style.display='block';
+        doc.querySelectorAll('.no-pdf').forEach(el=>el.style.display='none');
+        // Forzar colores en tablas y encabezados
+        doc.querySelectorAll('.sh-ico').forEach(el=>{
+          el.style.cssText+=';-webkit-print-color-adjust:exact;print-color-adjust:exact;';
+        });
+        doc.querySelectorAll('table.dt thead tr.hdr1 th').forEach(el=>{
+          el.style.cssText+=';background:#003520!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;';
+        });
+        doc.querySelectorAll('.kpi').forEach(el=>{
+          el.style.cssText+=';background:#101812!important;border:1px solid #22402a!important;';
+        });
+      }
+    });
+
+    // Ocultar cabecera y restaurar controles
+    if(hdr) hdr.style.display='none';
+    document.querySelectorAll('.no-pdf').forEach(el=>el.style.display='');
+
+    const {jsPDF}=window.jspdf;
+    // Usar A4 portrait para el reporte (más datos verticales)
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pageW=pdf.internal.pageSize.getWidth();   // 210
+    const pageH=pdf.internal.pageSize.getHeight();  // 297
+    const mg=8;
+    const availW=pageW-mg*2;
+    const availH=pageH-mg*2;
+
+    // Si el contenido es más alto que una página, agregar páginas
+    const imgRatio=canvas.width/canvas.height;
+    const pageRatio=availW/availH;
+    const drawW=availW;
+    const drawH=drawW/imgRatio;
+
+    if(drawH<=availH){
+      // Cabe en una página
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',mg,mg,drawW,drawH);
+    } else {
+      // Dividir en múltiples páginas
+      const pxPerMm=canvas.width/drawW;
+      const pageHeightPx=availH*pxPerMm;
+      let yOffset=0;
+      while(yOffset<canvas.height){
+        if(yOffset>0) pdf.addPage();
+        const sliceH=Math.min(pageHeightPx,canvas.height-yOffset);
+        // Crear canvas recortado para esta página
+        const pageCanvas=document.createElement('canvas');
+        pageCanvas.width=canvas.width;
+        pageCanvas.height=sliceH;
+        const ctx=pageCanvas.getContext('2d');
+        ctx.drawImage(canvas,0,-yOffset);
+        const sliceH_mm=sliceH/pxPerMm;
+        pdf.addImage(pageCanvas.toDataURL('image/jpeg',0.95),'JPEG',mg,mg,drawW,sliceH_mm);
+        yOffset+=pageHeightPx;
+      }
+    }
+
+    const yr=rData?rData.yr:'';
+    const per=(rData?rData.periodLbl:'').replace(/[|<>:"\/\\?*\s]+/g,'_').substring(0,40);
+    pdf.save(`Reporte_REGPOL_Amazonas_${yr}_${per}.pdf`);
+
+  } catch(err){
+    console.error('Error PDF reporte:',err);
+    // Fallback PNG
+    try{
+      const t=document.getElementById('reporte-pdf-area');
+      const c=await html2canvas(t,{scale:2,backgroundColor:'#04080a',useCORS:true,logging:false});
+      const a=document.createElement('a');
+      a.download='Reporte_REGPOL_Amazonas.png';
+      a.href=c.toDataURL('image/png');
+      a.click();
+    } catch(e){ alert('Error al exportar. Use Google Chrome.'); }
+    const hdr=document.getElementById('rep-inst-header');
+    if(hdr) hdr.style.display='none';
+    document.querySelectorAll('.no-pdf').forEach(el=>el.style.display='');
+  } finally {
+    if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
+  }
+}
+
+// ──────────────────────────────────────
+//  RENDER DASHBOARD — estilo imagen referencia
+// ──────────────────────────────────────
+// ──────────────────────────────────────
+//  MODO
+// ──────────────────────────────────────
+function setMode(m){
+  mode=m;
+  document.getElementById('mode-div').classList.toggle('on',m==='division');
+  document.getElementById('mode-com').classList.toggle('on',m==='comisaria');
+  document.getElementById('mode-info').textContent=m==='division'
+    ?'Agrupando por DIVISION PNP.':'Agrupando por COMISARIA / SUBUNIDAD.';
+  if(document.getElementById('yr-main').value) buildUnits();
+}
+
+function getGroupKey(){return mode==='division'?['DIVISION','DIVISIÓN']:['COMISARIA','COMISARÍA','COMISARIA PNP','SUBUNIDAD'];}
+
+// ──────────────────────────────────────
+//  UNIDADES
+// ──────────────────────────────────────
+function buildUnits(){
+  const yr=document.getElementById('yr-main').value;
+  if(!yr||!WB[yr]) return;
+  const rows=WB[yr];
+  const units=[...new Set(rows.map(r=>getUnitOfRow(r)).filter(Boolean))].sort();
+  selUnitsSet=new Set(units);
+  const c=document.getElementById('unit-pills');c.innerHTML='';
+  units.forEach(u=>{
+    const p=document.createElement('div');p.className='pill on';p.textContent=shortN(u);p.dataset.full=u;p.dataset.low=shortN(u).toLowerCase();
+    p.onclick=()=>{if(selUnitsSet.has(u)){selUnitsSet.delete(u);p.classList.remove('on');}else{selUnitsSet.add(u);p.classList.add('on');}updUCnt();chkReady();};
+    c.appendChild(p);
+  });
+  updUCnt();chkReady();
+}
+function selUnits(val){
+  document.querySelectorAll('#unit-pills .pill').forEach(p=>{
+    if(p.style.display==='none') return;
+    const u=p.dataset.full;
+    if(val){selUnitsSet.add(u);p.classList.add('on');}else{selUnitsSet.delete(u);p.classList.remove('on');}
+  });
+  updUCnt();chkReady();
+}
+function filterUnits(){
+  const q=document.getElementById('unit-search').value.toLowerCase();
+  document.querySelectorAll('#unit-pills .pill').forEach(p=>{p.style.display=p.dataset.low.includes(q)?'':'none';});
+}
+function updUCnt(){document.getElementById('ucnt').textContent=selUnitsSet.size+' unidades seleccionadas';}
+
+// ──────────────────────────────────────
+//  INDICADORES PILLS
+// ──────────────────────────────────────
+function buildIndPills(){
+  selIndsSet=new Set(Object.keys(IMAP));
+  const c=document.getElementById('ind-pills');c.innerHTML='';
+  Object.keys(IMAP).forEach(k=>{
+    const p=document.createElement('div');p.className='pill on';p.textContent=k;p.dataset.cat=IMAP[k].cat;
+    p.onclick=()=>{if(selIndsSet.has(k)){selIndsSet.delete(k);p.classList.remove('on');}else{selIndsSet.add(k);p.classList.add('on');}chkReady();};
+    c.appendChild(p);
+  });
+}
+function selInds(val){
+  document.querySelectorAll('#ind-pills .pill').forEach(p=>{const k=p.textContent;if(val){selIndsSet.add(k);p.classList.add('on');}else{selIndsSet.delete(k);p.classList.remove('on');}});
+  chkReady();
+}
+function selCat(cat){
+  document.querySelectorAll('#ind-pills .pill').forEach(p=>{
+    if(p.dataset.cat===cat){selIndsSet.add(p.textContent);p.classList.add('on');}
+    else{selIndsSet.delete(p.textContent);p.classList.remove('on');}
+  });
+  chkReady();
+}
+
+// ──────────────────────────────────────
+//  MESES (reporte)
+// ──────────────────────────────────────
+function buildMGrid(){
+  const g=document.getElementById('mgrid');g.innerHTML='';mRange=[];
+  MONTHS.forEach((m,i)=>{
+    const b=document.createElement('div');b.className='mb';b.textContent=m;b.dataset.i=i;
+    b.onclick=()=>togM(i);g.appendChild(b);
+  });
+}
+function togM(i){
+  if(!mRange.length){mRange=[i,i];}
+  else if(mRange.length===2&&mRange[0]===mRange[1]&&i!==mRange[0]){mRange=[Math.min(mRange[0],i),Math.max(mRange[0],i)];}
+  else{mRange=[i,i];}
+  updMBtns();chkReady();
+}
+function updMBtns(){
+  document.querySelectorAll('#mgrid .mb').forEach(b=>{
+    const i=parseInt(b.dataset.i);b.classList.remove('sel','rng');
+    if(mRange.length===2){if(i===mRange[0]||i===mRange[1])b.classList.add('sel');else if(i>mRange[0]&&i<mRange[1])b.classList.add('rng');}
+  });
+  const lbl=document.getElementById('mlbl');
+  if(mRange.length===2)lbl.textContent='Periodo: '+(mRange[0]===mRange[1]?MNAMES[mRange[0]]:MNAMES[mRange[0]]+' → '+MNAMES[mRange[1]]);
+  else lbl.textContent='';
+}
+function togglePP(){
+  const v=document.getElementById('rep-ptype').value;
+  document.getElementById('pp-m').style.display=v==='months'?'block':'none';
+  document.getElementById('pp-d').style.display=v==='days'?'block':'none';
+  document.getElementById('pp-f').style.display=v==='full'?'block':'none';
+  chkReady();
+}
+function chkReady(){
+  const yr=document.getElementById('yr-main').value;
+  const pt=document.getElementById('rep-ptype').value;
+  let ok=false;
+  if(pt==='months')ok=mRange.length===2;
+  else if(pt==='days')ok=!!(document.getElementById('df').value&&document.getElementById('dt').value);
+  else ok=true;
+  document.getElementById('gbtn').disabled=!(yr&&ok&&selUnitsSet.size>0&&selIndsSet.size>0);
+}
+
+// ──────────────────────────────────────
+//  FILTRAR POR PERIODO (reporte)
+// ──────────────────────────────────────
+function filterByPeriod(rows,pt){
+  if(pt==='full') return rows;
+  if(pt==='months'){return rows.filter(r=>{const mi=MONTHS.indexOf((r['MES']||'').toString().trim().toUpperCase());return mi>=mRange[0]&&mi<=mRange[1];});}
+  if(pt==='days'){const from=new Date(document.getElementById('df').value+'T00:00:00');const to=new Date(document.getElementById('dt').value+'T23:59:59');return rows.filter(r=>{const d=r['FECHA']?new Date(r['FECHA']):null;return d&&d>=from&&d<=to;});}
+  return rows;
+}
+
+// ──────────────────────────────────────
+//  CALCULAR RESULTADO (reporte)
+// ──────────────────────────────────────
+function calcResult(rows,units){
+  const result={};
+  const indsArr=[...selIndsSet];
+  indsArr.forEach(lbl=>{
+    const keys=IMAP[lbl].keys;
+    result[lbl]={};
+    units.forEach(u=>{
+      const val=rows.filter(r=>getUnitOfRow(r)===u&&keys.includes((r['TIPO INDICADOR']||'').trim())).reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0);
+      result[lbl][u]=val;
+    });
+    result[lbl]['TOTAL']=units.reduce((s,u)=>s+(result[lbl][u]||0),0);
+  });
+  return result;
+}
+
+// ──────────────────────────────────────
+//  GENERAR REPORTE
+// ──────────────────────────────────────
+function genReport(){
+  const yr=document.getElementById('yr-main').value;
+  const pt=document.getElementById('rep-ptype').value;
+  const allRows=WB[yr]||[];
+  const units=[...selUnitsSet].sort();
+  let rows=allRows.filter(r=>selUnitsSet.has(getUnitOfRow(r)));
+  rows=filterByPeriod(rows,pt);
+  if(!rows.length){setSt('st-gen','st-err','⚠ Sin registros con los filtros seleccionados.');return;}
+  let periodLbl='';
+  if(pt==='months')periodLbl=mRange[0]===mRange[1]?`${MNAMES[mRange[0]]} ${yr}`:`${MNAMES[mRange[0]]} – ${MNAMES[mRange[1]]} ${yr}`;
+  else if(pt==='days')periodLbl=`${document.getElementById('df').value} al ${document.getElementById('dt').value}`;
+  else periodLbl=`Año ${yr} completo`;
+  const result=calcResult(rows,units);
+  rData={result,units,periodLbl,yr,mode,ts:new Date().toLocaleString('es-PE')};
+  renderReport(rData);
+  setSt('st-gen','st-ok','✓ Reporte generado · '+rows.length.toLocaleString()+' registros');
+  document.getElementById('nb-rep').style.display='inline';
+  showP('p-reporte',3);
+}
+
+function renderReport({result,units,periodLbl,yr,mode}){
+  document.getElementById('rep-empty').style.display='none';
+  document.getElementById('rep-body').style.display='block';
+  document.getElementById('rep-badge').textContent=periodLbl+' · '+(mode==='division'?'DIVISIONES':'COMISARÍAS');
+  document.getElementById('exp-title').textContent='CONSOLIDADO PNP · AMAZONAS · '+periodLbl.toUpperCase();
+  document.getElementById('exp-meta').textContent=`Generado: ${rData.ts} · ${units.length} unidades · ${Object.keys(result).length} indicadores`;
+  const tot=k=>result[k]?units.reduce((s,u)=>s+(result[k][u]||0),0):0;
+  document.getElementById('kpi-grid').innerHTML=`
+    <div class="kpi k-gold"><div class="kpi-lbl">Operativos</div><div class="kpi-val">${tot('OPERATIVOS').toLocaleString()}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Det. Delitos</div><div class="kpi-val">${(tot('DETENIDOS DELITOS PER.')+tot('DETENIDOS DELITOS EXT.')).toLocaleString()}</div><div class="kpi-sub">Per: ${tot('DETENIDOS DELITOS PER.')} · Ext: ${tot('DETENIDOS DELITOS EXT.')}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Requisitorias</div><div class="kpi-val">${tot('DETENIDOS RQ').toLocaleString()}</div></div>
+    <div class="kpi"><div class="kpi-lbl">PBC (Kg)</div><div class="kpi-val">${tot('PBC - KG').toFixed(3)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Marihuana (Kg)</div><div class="kpi-val">${tot('MARIHUANA - KG').toFixed(3)}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Armas Fuego</div><div class="kpi-val">${tot('ARMAS DE FUEGO').toLocaleString()}</div></div>
+    <div class="kpi k-green"><div class="kpi-lbl">Dinero Inc. (S/.)</div><div class="kpi-val" style="font-size:20px;">${tot('DINERO INCAUTADO (S/.)').toLocaleString('es-PE',{minimumFractionDigits:2})}</div></div>
+    <div class="kpi k-blue"><div class="kpi-lbl">Celulares</div><div class="kpi-val">${tot('CELULARES INCAUTADOS').toLocaleString()}</div></div>
+    <div class="kpi k-amber"><div class="kpi-lbl">Unidades</div><div class="kpi-val">${units.length}</div></div>`;
+  renderRank('rk-ops','OPERATIVOS',result,units);
+  renderRank('rk-det','DETENIDOS DELITOS PER.',result,units);
+  renderTable(result,units);
+}
+
+function renderRank(elId,key,result,units){
+  const el=document.getElementById(elId);
+  if(!result[key]){el.innerHTML='<div style="font-size:11px;color:var(--tx3);padding:8px 0;">Sin datos</div>';return;}
+  const data=units.map(u=>({u,v:result[key][u]||0})).sort((a,b)=>b.v-a.v).slice(0,8);
+  const mx=data[0]?.v||1;
+  el.innerHTML=data.map((x,i)=>`<div class="rank-row"><div class="rn ${i<3?'top':''}">${i+1}</div><div class="rd">${shortN(x.u)}</div><div class="rb-bg"><div class="rb-fill" style="width:${Math.round(x.v/mx*100)}%"></div></div><div class="rv">${x.v.toLocaleString()}</div></div>`).join('');
+}
+
+function renderTable(result,units){
+  const items=Object.keys(result);
+  const cols=[...units,'TOTAL'];
+  let h=`<thead><tr class="hdr1"><th>INDICADORES</th>${cols.map(u=>`<th>${shortN(u)}</th>`).join('')}</tr></thead><tbody>`;
+  items.forEach(item=>{
+    const row=result[item];
+    h+=`<tr data-q="${item.toLowerCase()}" data-tot="${row['TOTAL']||0}"><td>${item}</td>`;
+    cols.forEach(u=>{const v=row[u]||0;const cls=v===0?'z':u==='TOTAL'?'tot':'';h+=`<td class="${cls}">${fmtVal(item,v)}</td>`;});
+    h+='</tr>';
+  });
+  document.getElementById('dtbl').innerHTML=h+'</tbody>';
+}
+function filterTbl(){
+  const q=document.getElementById('tbl-q').value.toLowerCase();
+  const hz=document.getElementById('hide-zero').checked;
+  document.querySelectorAll('#dtbl tbody tr').forEach(r=>{
+    const matchQ=r.dataset.q.includes(q);
+    const matchZ=!hz||parseFloat(r.dataset.tot)>0;
+    r.style.display=(matchQ&&matchZ)?'':'none';
+  });
+}
+
+
+// ──────────────────────────────────────
+//  EXPORTAR CSV
+// ──────────────────────────────────────
+function dlCSV(){
+  if(!rData)return;
+  const{result,units,periodLbl,yr,ts,mode}=rData;
+  const cols=[...units,'TOTAL'];
+  let csv=`"CONSOLIDADO PNP REGIÓN AMAZONAS - ${periodLbl}"\n"Modo: ${mode==='division'?'Divisiones':'Comisarías'}"\n"Generado: ${ts}"\n\n`;
+  csv+=`"INDICADORES",${cols.map(u=>`"${u}"`).join(',')}\n`;
+  Object.entries(result).forEach(([item,row])=>{csv+=`"${item}",${cols.map(u=>(row[u]||0)).join(',')}\n`;});
+  dl(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),`PNP_Amazonas_${yr}_${periodLbl.replace(/[^\w]/g,'_')}.csv`);
+}
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+
+// ──────────────────────────────────────
+//  EXPORTAR XLSM
+// ──────────────────────────────────────
+function exportXLSX(){
+  if(!rData){setSt('st-exp','st-err','Genera un reporte primero.');return;}
+  setSt('st-exp','st-info','<span class="spin"></span> Generando archivo Excel...');
+  try{
+    const{result,units,periodLbl,yr,mode,ts}=rData;
+    const fname=(document.getElementById('exp-fname').value||'Consolidado_PNP_Amazonas').replace(/[^\w\s\-]/g,'');
+    const classif=document.getElementById('exp-class').value;
+    const items=Object.keys(result);
+    const cols=[...units,'TOTAL'];
+    const wb=XLSX.utils.book_new();
+    // Hoja DATOS
+    {
+      const ws_data=[];
+      ws_data.push(['POLICÍA NACIONAL DEL PERÚ']);ws_data.push(['REGIÓN POLICIAL AMAZONAS - ESTADO MAYOR']);
+      ws_data.push([`CONSOLIDADO ESTADÍSTICO OPERACIONAL - ${periodLbl.toUpperCase()}`]);
+      ws_data.push([`Modo: ${mode==='division'?'Por Divisiones':'Por Comisarías'} | Clasificación: ${classif} | Generado: ${ts}`]);
+      ws_data.push([]);ws_data.push(['INDICADORES',...cols.map(u=>shortN(u))]);
+      items.forEach(item=>{ws_data.push([item,...cols.map(u=>{const v=result[item][u]||0;return isKgInd(item)?parseFloat(v.toFixed(3)):v;})]);});
+      ws_data.push([]);
+      ws_data.push(['TOTALES GENERALES',...cols.map((u,ci)=>({f:`SUM(${XLSX.utils.encode_cell({r:6,c:ci+1})}:${XLSX.utils.encode_cell({r:5+items.length,c:ci+1})})`}))]);
+      const ws=XLSX.utils.aoa_to_sheet(ws_data);
+      ws['!cols']=[{wch:34},...cols.map(()=>({wch:18}))];
+      ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:cols.length}},{s:{r:1,c:0},e:{r:1,c:cols.length}},{s:{r:2,c:0},e:{r:2,c:cols.length}},{s:{r:3,c:0},e:{r:3,c:cols.length}}];
+      XLSX.utils.book_append_sheet(wb,ws,'DATOS');
+    }
+    // Hoja ANÁLISIS
+    {
+      const ws_data=[];
+      ws_data.push(['HOJA DE ANÁLISIS ESTADÍSTICO']);
+      ws_data.push([`Periodo: ${periodLbl} | Año: ${yr}`]);ws_data.push([]);
+      ws_data.push(['INDICADOR','TOTAL REGIÓN','MÁXIMO','UNIDAD MÁX.','MÍNIMO','UNIDAD MÍN.','PROMEDIO','UNIDADES CON DATO','% ACTIVAS']);
+      items.forEach(item=>{
+        const vals=units.map(u=>result[item][u]||0);
+        const total=vals.reduce((s,v)=>s+v,0);const mx=Math.max(...vals);
+        const mnV=vals.some(v=>v>0)?Math.min(...vals.filter(v=>v>0)):0;
+        const mxUnit=units[vals.indexOf(mx)];const mnUnit=mnV>0?units[vals.indexOf(mnV)]:'—';
+        const active=vals.filter(v=>v>0).length;const avg=active>0?total/active:0;
+        ws_data.push([item,isKgInd(item)?parseFloat(total.toFixed(3)):total,isKgInd(item)?parseFloat(mx.toFixed(3)):mx,shortN(mxUnit),isKgInd(item)?parseFloat(mnV.toFixed(3)):mnV,shortN(mnUnit),parseFloat(avg.toFixed(1)),active,units.length>0?((active/units.length)*100).toFixed(1)+'%':'0%']);
+      });
+      const ws=XLSX.utils.aoa_to_sheet(ws_data);
+      ws['!cols']=[{wch:36},{wch:14},{wch:12},{wch:24},{wch:12},{wch:24},{wch:12},{wch:18},{wch:14}];
+      XLSX.utils.book_append_sheet(wb,ws,'ANÁLISIS');
+    }
+    // Hoja RANKING
+    {
+      const ws_data=[];ws_data.push(['RANKING DE UNIDADES POR INDICADOR']);ws_data.push([`Periodo: ${periodLbl}`]);ws_data.push([]);
+      const keyInds=['OPERATIVOS','DETENIDOS DELITOS PER.','DETENIDOS RQ','PBC - KG','MARIHUANA - KG','ARMAS DE FUEGO','BANDAS DESARTICULADAS','ORGANIZACIONES CRIMINALES'].filter(k=>result[k]);
+      keyInds.forEach(ind=>{
+        const total=units.reduce((s,u)=>s+(result[ind][u]||0),0);if(total===0)return;
+        ws_data.push([`RANKING: ${ind}`,'','','','']);ws_data.push(['#','UNIDAD','VALOR','% DEL TOTAL','']);
+        const ranked=units.map(u=>({u,v:result[ind][u]||0})).sort((a,b)=>b.v-a.v);
+        ranked.forEach((x,i)=>{const pct=total>0?((x.v/total)*100).toFixed(1)+'%':'0%';ws_data.push([i+1,shortN(x.u),isKgInd(ind)?parseFloat(x.v.toFixed(3)):x.v,pct,i<3?['1°','2°','3°'][i]:'']);});
+        ws_data.push(['TOTAL','',isKgInd(ind)?parseFloat(total.toFixed(3)):total,'100%','']);ws_data.push([]);
+      });
+      const ws=XLSX.utils.aoa_to_sheet(ws_data);ws['!cols']=[{wch:8},{wch:32},{wch:16},{wch:14},{wch:14}];
+      XLSX.utils.book_append_sheet(wb,ws,'RANKING');
+    }
+    // Hoja COMP. AÑOS
+    if(availYears.length>=2){
+      const ws_data=[];ws_data.push(['COMPARACIÓN MULTI-AÑO']);ws_data.push([`Años: ${availYears.join(', ')}`]);ws_data.push([]);
+      const years=availYears.sort();
+      ws_data.push(['INDICADOR',...years,...years.slice(1).map((y,i)=>`VAR ${years[i]}→${y}`),...years.slice(1).map((y,i)=>`VAR% ${years[i]}→${y}`)]);
+      Object.keys(IMAP).forEach(k=>{
+        const inds=IMAP[k].keys;const vals={};
+        years.forEach(yr=>{const rows=WB[yr]||[];vals[yr]=rows.filter(r=>inds.includes((r['TIPO INDICADOR']||'').trim())).reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0);});
+        const varAbs=years.slice(1).map((y,i)=>vals[y]-vals[years[i]]);
+        const varPct=years.slice(1).map((y,i)=>vals[years[i]]>0?((vals[y]-vals[years[i]])/vals[years[i]]*100).toFixed(1)+'%':'N/A');
+        ws_data.push([k,...years.map(y=>isKgInd(k)?parseFloat(vals[y].toFixed(3)):vals[y]),...varAbs,...varPct]);
+      });
+      const ws=XLSX.utils.aoa_to_sheet(ws_data);ws['!cols']=[{wch:32},...years.map(()=>({wch:14})),...years.slice(1).map(()=>({wch:16})),...years.slice(1).map(()=>({wch:14}))];
+      XLSX.utils.book_append_sheet(wb,ws,'COMP. AÑOS');
+    }
+    XLSX.writeFile(wb,`${fname}_${yr}.xlsm`,{bookType:'xlsm',compression:true});
+    setSt('st-exp','st-ok','✓ Generado: '+fname+'_'+yr+'.xlsm');
+  }catch(err){setSt('st-exp','st-err','Error: '+err.message);console.error(err);}
+}
+
+document.getElementById('exp-class').addEventListener('change',function(){document.getElementById('wmk-class').textContent=this.value;});
+document.getElementById('admin-drive-url').addEventListener('input',function(){updateUrlPreview(this.value);});
+
+// Inicializar
+buildMGrid();
+// Cargar datos automáticamente desde Drive al abrir la página
+loadFromDrive();
+</script>
+</body>
+</html>
