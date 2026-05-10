@@ -1266,7 +1266,10 @@ function updateUrlPreview(url){
   const el=document.getElementById('url-preview-lbl');
   if(!url){el.innerHTML='— sin URL configurada —';return;}
   const id=extractDriveId(url);
-  el.innerHTML=id?`ID detectado: <span>${id}</span>`:`<span style="color:var(--am-l)">⚠ No se detectó un ID válido de Drive. Verifica la URL.</span>`;
+  const tipo=isGoogleSheets(url)?'Google Sheets':'Google Drive';
+  el.innerHTML=id
+    ?`✓ Tipo: <span>${tipo}</span> · ID detectado: <span>${id.substring(0,18)}...</span>`
+    :`<span style="color:var(--am-l)">⚠ No se detectó un ID válido. Verifica la URL.</span>`;
 }
 function changePwd(){
   const p1=document.getElementById('new-pwd').value;
@@ -1292,11 +1295,19 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal('modal-l
 //  GOOGLE DRIVE LOADER
 // ──────────────────────────────────────
 function extractDriveId(url){
-  const m=url.match(/\/d\/([a-zA-Z0-9_-]{20,})/)||url.match(/id=([a-zA-Z0-9_-]{20,})/);
+  // Acepta IDs cortos (25+) en Drive y Sheets
+  const m=url.match(/\/d\/([a-zA-Z0-9_-]{25,})/)||url.match(/id=([a-zA-Z0-9_-]{25,})/);
   return m?m[1]:null;
 }
-function buildDriveExportUrl(id){
-  // Usa el endpoint de exportación directa de Drive
+function isGoogleSheets(url){
+  return url.includes('docs.google.com/spreadsheets');
+}
+function buildDriveExportUrl(id, origUrl){
+  // Google Sheets → exportar como xlsx directamente
+  if(origUrl && isGoogleSheets(origUrl)){
+    return `https://docs.google.com/spreadsheets/d/${id}/export?format=xlsx`;
+  }
+  // Google Drive → descarga directa
   return `https://drive.google.com/uc?export=download&id=${id}&confirm=t`;
 }
 
@@ -1339,7 +1350,7 @@ async function loadFromDrive(){
   showLoader('Descargando datos...','Conectando con Google Drive · Por favor espere');
 
   try{
-    const exportUrl=buildDriveExportUrl(id);
+    const exportUrl=buildDriveExportUrl(id, url);
     const resp=await fetch(exportUrl);
     if(!resp.ok) throw new Error(`HTTP ${resp.status}: No se pudo descargar el archivo`);
     const arrayBuffer=await resp.arrayBuffer();
@@ -1350,7 +1361,7 @@ async function loadFromDrive(){
     // Intento alternativo con proxy CORS si el fetch directo falla
     try{
       showLoader('Reintentando...','Usando proxy alternativo');
-      const proxyUrl=`https://corsproxy.io/?${encodeURIComponent(buildDriveExportUrl(id))}`;
+      const proxyUrl=`https://corsproxy.io/?${encodeURIComponent(buildDriveExportUrl(id, url))}`;
       const resp2=await fetch(proxyUrl);
       if(!resp2.ok) throw new Error(`Proxy HTTP ${resp2.status}`);
       const buf=await resp2.arrayBuffer();
