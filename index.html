@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema Estadístico · Región Policial Amazonas · v4.0</title>
+<title>SEO-PNP · Sistema Estadístico Operacional · Región Amazonas · v4.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -226,7 +226,12 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 
 .wmk{text-align:center;padding:20px;font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--tx4);letter-spacing:.12em;text-transform:uppercase;border-top:1px solid var(--bd);margin-top:32px;}
 
-/* ━━━━━ MODAL ADMIN ━━━━━ */
+/* ━━━━━ MULTI-SELECT ━━━━━ */
+select[multiple]{scrollbar-width:thin;scrollbar-color:var(--cr) var(--bg3);}
+select[multiple] option{padding:7px 12px;border-radius:4px;margin:2px 0;cursor:pointer;transition:background .1s;}
+select[multiple] option:checked{background:linear-gradient(90deg,var(--cr-d),var(--cr));color:#fff;font-weight:600;}
+select[multiple] option:hover{background:rgba(0,80,48,.3);}
+select:not([multiple]){appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a9a84' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);animation:fadein .2s ease;}
 .modal-box{background:var(--bg2);border:1px solid var(--bd2);border-radius:14px;padding:36px 40px;width:100%;max-width:440px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.8);}
 .modal-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cr),var(--gold),var(--cr));border-radius:14px 14px 0 0;}
@@ -574,7 +579,7 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 <div class="topbar">
   <div class="shield">PNP</div>
   <div class="brand">
-    <div class="brand-t">Sistema Estadístico PNP</div>
+    <div class="brand-t">PNP Sistema Estadístico Operacional</div>
     <div class="brand-s">Región Policial Amazonas · Estadística PNP · v4.0</div>
   </div>
   <div class="tb-right">
@@ -834,9 +839,18 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
       </div>
     </div>
     <div id="pp-m" style="display:none;">
-      <label class="lbl">Meses (clic: inicio → fin)</label>
-      <div class="mgrid" id="mgrid"></div>
-      <div style="font-size:11px;color:var(--tx3);margin-top:7px;font-family:'Barlow Condensed',sans-serif;" id="mlbl"></div>
+      <label class="lbl">Rango de meses</label>
+      <div class="g2" style="gap:12px;margin-bottom:8px;">
+        <div>
+          <label class="lbl" style="font-size:10px;">Mes inicio</label>
+          <select id="m-ini" onchange="syncMRange();chkReady()" style="width:100%;background:var(--bg3);color:var(--tx);border:1px solid var(--bd2);border-radius:8px;padding:10px 14px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:.04em;outline:none;"></select>
+        </div>
+        <div>
+          <label class="lbl" style="font-size:10px;">Mes fin</label>
+          <select id="m-fin" onchange="syncMRange();chkReady()" style="width:100%;background:var(--bg3);color:var(--tx);border:1px solid var(--bd2);border-radius:8px;padding:10px 14px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:.04em;outline:none;"></select>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;" id="mlbl"></div>
     </div>
     <div id="pp-d" style="display:none;">
       <div class="g2">
@@ -850,25 +864,44 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
   </div>
   <div class="card">
     <div class="card-t">Unidades a incluir</div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-      <button class="btn btn-out" onclick="selUnits(true)">✓ Todas</button>
-      <button class="btn btn-out" onclick="selUnits(false)">✗ Ninguna</button>
-      <input type="text" id="unit-search" placeholder="Buscar unidad..." style="max-width:220px;width:auto;flex:1;" oninput="filterUnits()">
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-out" style="font-size:10px;padding:7px 12px;" onclick="selUnits(true)">✓ Todas</button>
+      <button class="btn btn-out" style="font-size:10px;padding:7px 12px;" onclick="selUnits(false)">✗ Ninguna</button>
+      <span id="ucnt" style="font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;margin-left:4px;"></span>
     </div>
-    <div class="pills" id="unit-pills"></div>
-    <div id="ucnt" style="font-size:11px;color:var(--tx3);margin-top:8px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;"></div>
+    <select id="unit-select" multiple size="8" style="
+      width:100%;background:var(--bg3);color:var(--tx);
+      border:1px solid var(--bd2);border-radius:8px;
+      padding:4px;font-family:'Barlow Condensed',sans-serif;
+      font-size:13px;letter-spacing:.04em;
+      outline:none;
+    " onchange="syncUnitsFromSelect()">
+    </select>
+    <div style="font-size:10px;color:var(--tx3);margin-top:6px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;">
+      💡 Mantén <strong>Ctrl</strong> (Windows) o <strong>Cmd</strong> (Mac) para seleccionar varias · <strong>Shift</strong> para rango
+    </div>
   </div>
   <div class="card">
     <div class="card-t">Indicadores a reportar</div>
     <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-      <button class="btn btn-out" onclick="selInds(true)">✓ Todos</button>
-      <button class="btn btn-out" onclick="selInds(false)">✗ Ninguno</button>
-      <button class="btn btn-out" onclick="selCat('ops')">Operativos</button>
-      <button class="btn btn-out" onclick="selCat('drog')">Drogas</button>
-      <button class="btn btn-out" onclick="selCat('veh')">Vehículos</button>
-      <button class="btn btn-out" onclick="selCat('arm')">Armas</button>
+      <button class="btn btn-out" style="font-size:10px;padding:7px 12px;" onclick="selInds(true)">✓ Todos</button>
+      <button class="btn btn-out" style="font-size:10px;padding:7px 12px;" onclick="selInds(false)">✗ Ninguno</button>
+      <button class="btn btn-out" style="font-size:10px;padding:7px 12px;" onclick="selCat('ops')">Operativos</button>
+      <button class="btn btn-out" style="font-size:10px;padding:7px 12px;" onclick="selCat('drog')">Drogas</button>
+      <button class="btn btn-out" style="font-size:10px;padding:7px 12px;" onclick="selCat('veh')">Vehículos</button>
+      <button class="btn btn-out" style="font-size:10px;padding:7px 12px;" onclick="selCat('arm')">Armas</button>
     </div>
-    <div class="pills" id="ind-pills"></div>
+    <select id="ind-select" multiple size="10" style="
+      width:100%;background:var(--bg3);color:var(--tx);
+      border:1px solid var(--bd2);border-radius:8px;
+      padding:4px;font-family:'Barlow Condensed',sans-serif;
+      font-size:13px;letter-spacing:.04em;
+      outline:none;
+    " onchange="syncIndsFromSelect()">
+    </select>
+    <div style="font-size:10px;color:var(--tx3);margin-top:6px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;">
+      💡 Mantén <strong>Ctrl</strong> / <strong>Cmd</strong> para seleccionar varios · <strong>Shift</strong> para rango
+    </div>
   </div>
   <button class="btn btn-red btn-lg btn-full" id="gbtn" disabled onclick="genReport()" style="max-width:360px;">
     ⚡ Generar Reporte Consolidado
@@ -1100,6 +1133,7 @@ const IMAP={
   'PAPELETAS I.R.N.T.':       {keys:['PAPELETA','PAPELETAS IMPUESTAS IRNT'],cat:'ops'},
   'BANDAS DESARTICULADAS':    {keys:['BANDAS CRIMINALES DESARTICULADAS'],cat:'ops'},
   'ORGANIZACIONES CRIMINALES':{keys:['ORGANIZACIONES CRIMINALES DESARTICULADAS','ORGANIZACION CRIMINAL DESARTICULADA'],cat:'ops'},
+  'MEDIDAS DE PROTECCION':    {keys:['MEDIDAS DE PROTECCIÓN','MEDIDAS DE PROTECCION'],cat:'ops'},
   'COMBUSTIBLE (Gls)':        {keys:['COMBUSTIBLE (galones)','COMBUSTIBLE','COMBUSTIBLE (GALONES)'],cat:'ops'},
   'MADERA DECOMISADA (Pies)': {keys:['MADERA','MADERA DECOMISADA (PIES TABLARES)'],cat:'ops'},
   'DINERO INCAUTADO (S/.)':   {keys:['DINERO - SOLES','DINERO INCAUTADO (SOLES)'],cat:'ops'},
@@ -1449,8 +1483,16 @@ function processExcelBuffer(arrayBuffer, source){
 const DIV_LIST=[
   "DIVOPUS PNP CHACHAPOYAS",  // incluye DUE PNP AMAZONAS
   "DIVOPUS PNP UTCUBAMBA",
-  "DIVOPUS PNP NIEVA","DIVINCRI PNP AMAZONAS"
+  "DIVOPUS PNP NIEVA",
+  "DIVINCRI PNP AMAZONAS"
 ];
+// Etiquetas legibles para cada división
+const DIV_LABELS={
+  "DIVOPUS PNP CHACHAPOYAS":"DIVOPUS CHACHAPOYAS + DUE",
+  "DIVOPUS PNP UTCUBAMBA":"DIVOPUS UTCUBAMBA",
+  "DIVOPUS PNP NIEVA":"DIVOPUS NIEVA",
+  "DIVINCRI PNP AMAZONAS":"DIVINCRI AMAZONAS"
+};
 
 const IMAP_DB={
   'DETENIDOS':   ['DETENIDOS POR DIV. DELITOS - PERUANOS (MAYORES DE EDAD)'],
@@ -1497,7 +1539,7 @@ function handleModeChange(){
       DIV_LIST.forEach(d=>{
         const o=document.createElement('option');
         o.value=d;
-        o.textContent=d.toUpperCase().includes('CHACHAPOYAS')?d+' + DUE PNP AMAZONAS':d;
+        o.textContent=DIV_LABELS[d]||d;
         unitSel.appendChild(o);
       });
     } else if(mode==='comisaria'){
@@ -1584,7 +1626,7 @@ function renderDashV51(c,p,yC,yP,pt){
   const unitSel=document.getElementById('unit-sel');
   const unitVal=unitSel?unitSel.value:'all';
   let title='REGIÓN POLICIAL AMAZONAS';
-  if(mode!=='provincia'&&unitVal!=='all') title=unitVal;
+  if(mode!=='provincia'&&unitVal!=='all') title=DIV_LABELS[unitVal]||unitVal;
   document.getElementById('ops-unit-display').textContent=title;
 
   // Periodo label
@@ -1887,49 +1929,63 @@ function buildUnits(){
   const rows=WB[yr];
   const units=[...new Set(rows.map(r=>getUnitOfRow(r)).filter(Boolean))].sort();
   selUnitsSet=new Set(units);
-  const c=document.getElementById('unit-pills');c.innerHTML='';
+  const sel=document.getElementById('unit-select');
+  sel.innerHTML='';
   units.forEach(u=>{
-    const p=document.createElement('div');p.className='pill on';p.textContent=shortN(u);p.dataset.full=u;p.dataset.low=shortN(u).toLowerCase();
-    p.onclick=()=>{if(selUnitsSet.has(u)){selUnitsSet.delete(u);p.classList.remove('on');}else{selUnitsSet.add(u);p.classList.add('on');}updUCnt();chkReady();};
-    c.appendChild(p);
+    const o=document.createElement('option');
+    o.value=u;o.textContent=shortN(u);o.selected=true;
+    sel.appendChild(o);
   });
+  updUCnt();chkReady();
+}
+function syncUnitsFromSelect(){
+  const sel=document.getElementById('unit-select');
+  selUnitsSet=new Set([...sel.selectedOptions].map(o=>o.value));
   updUCnt();chkReady();
 }
 function selUnits(val){
-  document.querySelectorAll('#unit-pills .pill').forEach(p=>{
-    if(p.style.display==='none') return;
-    const u=p.dataset.full;
-    if(val){selUnitsSet.add(u);p.classList.add('on');}else{selUnitsSet.delete(u);p.classList.remove('on');}
-  });
+  const sel=document.getElementById('unit-select');
+  [...sel.options].forEach(o=>o.selected=val);
+  selUnitsSet=val?new Set([...sel.options].map(o=>o.value)):new Set();
   updUCnt();chkReady();
 }
-function filterUnits(){
-  const q=document.getElementById('unit-search').value.toLowerCase();
-  document.querySelectorAll('#unit-pills .pill').forEach(p=>{p.style.display=p.dataset.low.includes(q)?'':'none';});
+function updUCnt(){
+  const sel=document.getElementById('unit-select');
+  const total=sel?sel.options.length:0;
+  document.getElementById('ucnt').textContent=selUnitsSet.size+' / '+total+' unidades seleccionadas';
 }
-function updUCnt(){document.getElementById('ucnt').textContent=selUnitsSet.size+' unidades seleccionadas';}
 
 // ──────────────────────────────────────
 //  INDICADORES PILLS
 // ──────────────────────────────────────
 function buildIndPills(){
   selIndsSet=new Set(Object.keys(IMAP));
-  const c=document.getElementById('ind-pills');c.innerHTML='';
+  const sel=document.getElementById('ind-select');
+  sel.innerHTML='';
   Object.keys(IMAP).forEach(k=>{
-    const p=document.createElement('div');p.className='pill on';p.textContent=k;p.dataset.cat=IMAP[k].cat;
-    p.onclick=()=>{if(selIndsSet.has(k)){selIndsSet.delete(k);p.classList.remove('on');}else{selIndsSet.add(k);p.classList.add('on');}chkReady();};
-    c.appendChild(p);
+    const o=document.createElement('option');
+    o.value=k;o.textContent=k;o.dataset.cat=IMAP[k].cat;o.selected=true;
+    sel.appendChild(o);
   });
 }
+function syncIndsFromSelect(){
+  const sel=document.getElementById('ind-select');
+  selIndsSet=new Set([...sel.selectedOptions].map(o=>o.value));
+  chkReady();
+}
 function selInds(val){
-  document.querySelectorAll('#ind-pills .pill').forEach(p=>{const k=p.textContent;if(val){selIndsSet.add(k);p.classList.add('on');}else{selIndsSet.delete(k);p.classList.remove('on');}});
+  const sel=document.getElementById('ind-select');
+  [...sel.options].forEach(o=>o.selected=val);
+  selIndsSet=val?new Set(Object.keys(IMAP)):new Set();
   chkReady();
 }
 function selCat(cat){
-  document.querySelectorAll('#ind-pills .pill').forEach(p=>{
-    if(p.dataset.cat===cat){selIndsSet.add(p.textContent);p.classList.add('on');}
-    else{selIndsSet.delete(p.textContent);p.classList.remove('on');}
+  const sel=document.getElementById('ind-select');
+  [...sel.options].forEach(o=>{
+    const match=IMAP[o.value]&&IMAP[o.value].cat===cat;
+    o.selected=match;
   });
+  selIndsSet=new Set([...sel.selectedOptions].map(o=>o.value));
   chkReady();
 }
 
@@ -1937,26 +1993,29 @@ function selCat(cat){
 //  MESES (reporte)
 // ──────────────────────────────────────
 function buildMGrid(){
-  const g=document.getElementById('mgrid');g.innerHTML='';mRange=[];
+  // Poblar los dos selects de mes inicio/fin
+  const mIni=document.getElementById('m-ini');
+  const mFin=document.getElementById('m-fin');
+  if(!mIni||!mFin) return;
+  mIni.innerHTML='';mFin.innerHTML='';
   MONTHS.forEach((m,i)=>{
-    const b=document.createElement('div');b.className='mb';b.textContent=m;b.dataset.i=i;
-    b.onclick=()=>togM(i);g.appendChild(b);
+    const o1=document.createElement('option');o1.value=i;o1.textContent=MNAMES[i];mIni.appendChild(o1);
+    const o2=document.createElement('option');o2.value=i;o2.textContent=MNAMES[i];mFin.appendChild(o2);
   });
+  mFin.selectedIndex=11;
+  syncMRange();
 }
-function togM(i){
-  if(!mRange.length){mRange=[i,i];}
-  else if(mRange.length===2&&mRange[0]===mRange[1]&&i!==mRange[0]){mRange=[Math.min(mRange[0],i),Math.max(mRange[0],i)];}
-  else{mRange=[i,i];}
-  updMBtns();chkReady();
-}
-function updMBtns(){
-  document.querySelectorAll('#mgrid .mb').forEach(b=>{
-    const i=parseInt(b.dataset.i);b.classList.remove('sel','rng');
-    if(mRange.length===2){if(i===mRange[0]||i===mRange[1])b.classList.add('sel');else if(i>mRange[0]&&i<mRange[1])b.classList.add('rng');}
-  });
+function syncMRange(){
+  const mIni=document.getElementById('m-ini');
+  const mFin=document.getElementById('m-fin');
+  if(!mIni||!mFin) return;
+  let ini=parseInt(mIni.value);
+  let fin=parseInt(mFin.value);
+  // Si fin < ini, ajustar fin = ini
+  if(fin<ini){mFin.value=ini;fin=ini;}
+  mRange=[ini,fin];
   const lbl=document.getElementById('mlbl');
-  if(mRange.length===2)lbl.textContent='Periodo: '+(mRange[0]===mRange[1]?MNAMES[mRange[0]]:MNAMES[mRange[0]]+' → '+MNAMES[mRange[1]]);
-  else lbl.textContent='';
+  if(lbl) lbl.textContent='Periodo: '+(ini===fin?MNAMES[ini]:MNAMES[ini]+' → '+MNAMES[fin]);
 }
 function togglePP(){
   const v=document.getElementById('rep-ptype').value;
@@ -1969,9 +2028,12 @@ function chkReady(){
   const yr=document.getElementById('yr-main').value;
   const pt=document.getElementById('rep-ptype').value;
   let ok=false;
-  if(pt==='months')ok=mRange.length===2;
-  else if(pt==='days')ok=!!(document.getElementById('df').value&&document.getElementById('dt').value);
-  else ok=true;
+  if(pt==='months'){
+    syncMRange();
+    ok=mRange.length===2;
+  } else if(pt==='days'){
+    ok=!!(document.getElementById('df').value&&document.getElementById('dt').value);
+  } else ok=true;
   document.getElementById('gbtn').disabled=!(yr&&ok&&selUnitsSet.size>0&&selIndsSet.size>0);
 }
 
