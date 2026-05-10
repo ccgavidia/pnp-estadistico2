@@ -1544,9 +1544,37 @@ function filterDataDB(yr,ptype){
     const fromVal=document.getElementById('d-df').value;
     const toVal=document.getElementById('d-dt').value;
     if(!fromVal||!toVal) return rows;
-    const dF=new Date(fromVal+'T00:00:00');
-    const dT=new Date(toVal+'T23:59:59');
-    return rows.filter(r=>{const d=r['FECHA']?new Date(r['FECHA']):null;return d&&d>=dF&&d<=dT;});
+    // Extraer solo mes y día de las fechas ingresadas, y aplicarlas al año del dataset (yr)
+    // Esto permite comparar el mismo rango mes/día entre distintos años
+    const fromParts=fromVal.split('-'); // [yyyy, mm, dd]
+    const toParts=toVal.split('-');
+    const yrNum=parseInt(yr);
+    // Construir fechas con el año del dataset pero conservando mes y día
+    const dF=new Date(yrNum+'-'+fromParts[1]+'-'+fromParts[2]+'T00:00:00');
+    const dT=new Date(yrNum+'-'+toParts[1]+'-'+toParts[2]+'T23:59:59');
+    // Si el rango cruza fin de año (ej: nov→feb), ajustar año destino del límite superior
+    // Caso especial: si el mes/día de inicio > mes/día de fin, el rango cruza año
+    const fromMD=parseInt(fromParts[1])*100+parseInt(fromParts[2]);
+    const toMD=parseInt(toParts[1])*100+parseInt(toParts[2]);
+    const dTFinal = toMD < fromMD
+      ? new Date((yrNum+1)+'-'+toParts[1]+'-'+toParts[2]+'T23:59:59')
+      : dT;
+    return rows.filter(r=>{
+      const d=r['FECHA']?new Date(r['FECHA']):null;
+      if(!d) return false;
+      // Comparar solo mes y día dentro del año del dataset
+      const dMD=(d.getMonth()+1)*100+d.getDate();
+      const fMD=parseInt(fromParts[1])*100+parseInt(fromParts[2]);
+      const tMD=parseInt(toParts[1])*100+parseInt(toParts[2]);
+      if(fMD<=tMD){
+        // Rango normal: mismo año
+        return d.getFullYear()===yrNum && dMD>=fMD && dMD<=tMD;
+      } else {
+        // Rango que cruza año nuevo (ej: nov a feb)
+        return (d.getFullYear()===yrNum && dMD>=fMD) ||
+               (d.getFullYear()===(yrNum+1) && dMD<=tMD);
+      }
+    });
   }
   return rows;
 }
@@ -1593,9 +1621,13 @@ function renderDashV51(c,p,yC,yP,pt){
     const df=document.getElementById('d-df').value;
     const dt=document.getElementById('d-dt').value;
     if(df&&dt){
-      const f1=new Date(df+'T00:00:00').toLocaleDateString('es-PE',{day:'2-digit',month:'short'}).toUpperCase();
-      const f2=new Date(dt+'T00:00:00').toLocaleDateString('es-PE',{day:'2-digit',month:'short'}).toUpperCase();
-      pStr=`${f1} AL ${f2}`;
+      // Mostrar solo dia/mes ya que se aplica a cada año por separado
+      const pF=df.split('-');const pT=dt.split('-');
+      const fF=new Date('2000-'+pF[1]+'-'+pF[2]+'T00:00:00');
+      const fT=new Date('2000-'+pT[1]+'-'+pT[2]+'T00:00:00');
+      const s1=fF.toLocaleDateString('es-PE',{day:'2-digit',month:'short'}).toUpperCase();
+      const s2=fT.toLocaleDateString('es-PE',{day:'2-digit',month:'short'}).toUpperCase();
+      pStr=`${s1} AL ${s2} (c/año)`;
     }
   } else if(pt==='months'){
     const mf=MONTHS[parseInt(document.getElementById('m-from').value)];
