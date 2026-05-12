@@ -1013,20 +1013,18 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
     <div class="modal-title">🔐 Panel de Administración</div>
     <div class="modal-sub">Solo visible para el administrador del sistema · REGPOL Amazonas</div>
 
-    <!-- Sección: URL del archivo -->
+    <!-- Sección: Carpeta Drive (automática) -->
     <div class="admin-panel">
-      <div class="admin-panel-t">📊 Archivo Excel en Google Drive</div>
-      <div class="admin-panel-s">Pega aquí el enlace de compartir de Google Drive. El archivo debe estar compartido como "Cualquiera con el enlace puede ver".</div>
-      <div class="modal-field" style="margin-bottom:10px;">
-        <label>URL de Google Drive (enlace compartido)</label>
-        <div class="url-input-wrap">
-          <input type="text" id="admin-drive-url" placeholder="https://drive.google.com/file/d/XXXX/view?usp=sharing">
-          <button class="btn btn-gold" onclick="saveAdminDriveUrl()">💾 Guardar</button>
-        </div>
-        <div class="url-preview" id="url-preview-lbl">— sin URL configurada —</div>
+      <div class="admin-panel-t">📂 Carpeta Google Drive Configurada</div>
+      <div class="admin-panel-s">El sistema busca automáticamente el archivo Excel más reciente en la carpeta de Drive. Solo sube o reemplaza el .xlsx en esa carpeta para actualizar los datos.</div>
+      <div style="background:var(--bg3);border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;">
+        <div style="color:var(--tx3);margin-bottom:4px;">ID de Carpeta:</div>
+        <div style="color:var(--gold);word-break:break-all;font-size:12px;font-weight:700;">1vou8mxIyDmxSu3K8n-dYeekKnjgYMP1G</div>
+        <div style="color:var(--tx3);margin-top:8px;margin-bottom:2px;">Enlace directo:</div>
+        <a href="https://drive.google.com/drive/folders/1vou8mxIyDmxSu3K8n-dYeekKnjgYMP1G" target="_blank" style="color:var(--gr-l);font-size:11px;">Abrir carpeta en Drive ↗</a>
       </div>
-      <button class="btn btn-green btn-full" onclick="saveAdminDriveUrl();closeModal('modal-admin');loadFromDrive()">
-        💾 Guardar y Recargar Datos
+      <button class="btn btn-green btn-full" onclick="closeModal('modal-admin');loadFromDrive()">
+        🔄 Recargar Datos desde la Carpeta
       </button>
     </div>
 
@@ -1051,11 +1049,11 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
     <!-- Sección: Info -->
     <div style="background:var(--bg3);border-radius:8px;padding:14px 16px;margin-top:14px;font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;line-height:1.7;">
       <strong style="color:var(--tx2);display:block;margin-bottom:6px;">📋 Instrucciones para actualizar datos:</strong>
-      1. Sube el nuevo archivo .xlsx a Google Drive<br>
-      2. Clic derecho → "Compartir" → "Cualquiera con el enlace" → "Visualizador"<br>
-      3. Copia el enlace y pégalo arriba<br>
-      4. Clic en "Guardar y Recargar Datos"<br>
-      5. Los usuarios verán los datos actualizados automáticamente
+      1. Abre la carpeta de Drive: <a href="https://drive.google.com/drive/folders/1vou8mxIyDmxSu3K8n-dYeekKnjgYMP1G" target="_blank" style="color:var(--gr-l);">Abrir carpeta ↗</a><br>
+      2. Sube el nuevo archivo .xlsx (puede tener cualquier nombre)<br>
+      3. El sistema tomará automáticamente el archivo más reciente<br>
+      4. Clic en "Recargar Datos desde la Carpeta" o simplemente recarga la página<br>
+      5. <strong style="color:var(--gold);">No es necesario pegar ningún enlace</strong> · Todo es automático
     </div>
 
     <div style="margin-top:14px;text-align:right;">
@@ -1220,11 +1218,50 @@ const DRIVE_URL_KEY  = 'pnp_drive_url';
 const ADMIN_SESS_KEY = 'pnp_admin_session';
 const DEFAULT_PWD    = 'PNP2025'; // ← contraseña inicial (cámbiala tras primer acceso)
 
+// ── Carpeta de Google Drive (fija en el código) ──
+const DRIVE_FOLDER_ID = '1vou8mxIyDmxSu3K8n-dYeekKnjgYMP1G';
+const DRIVE_API_KEY   = 'AIzaSyDrK67oXhwjz5ShFOKVnMI6D7p2NguHp3c'; // ← pega aquí tu API Key de Google Cloud
+
 function simpleHash(str){
   let h=0;for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;}return h.toString(36);
 }
 function getStoredPwd(){return localStorage.getItem(ADMIN_PWD_KEY)||simpleHash(DEFAULT_PWD);}
-function getDriveUrl(){return localStorage.getItem(DRIVE_URL_KEY)||'';}
+
+// ── Guardar URL en los 3 mecanismos disponibles ──
+function saveDriveUrl(url){
+  // 1) localStorage (principal)
+  try{localStorage.setItem(DRIVE_URL_KEY, url);}catch(e){}
+  // 2) sessionStorage (respaldo en sesión)
+  try{sessionStorage.setItem(DRIVE_URL_KEY, url);}catch(e){}
+  // 3) Cookie con expiración de 1 año (más persistente en file://)
+  try{
+    const exp=new Date();exp.setFullYear(exp.getFullYear()+1);
+    document.cookie=DRIVE_URL_KEY+'='+encodeURIComponent(url)+';expires='+exp.toUTCString()+';path=/;SameSite=Lax';
+  }catch(e){}
+  // 4) Input oculto en el DOM como caché en memoria
+  try{
+    let hid=document.getElementById('_drive_url_cache');
+    if(!hid){hid=document.createElement('input');hid.type='hidden';hid.id='_drive_url_cache';document.body.appendChild(hid);}
+    hid.value=url;
+  }catch(e){}
+}
+
+// ── Leer URL desde cualquier mecanismo disponible ──
+function getDriveUrl(){
+  // 1) localStorage
+  try{const v=localStorage.getItem(DRIVE_URL_KEY);if(v)return v;}catch(e){}
+  // 2) sessionStorage
+  try{const v=sessionStorage.getItem(DRIVE_URL_KEY);if(v)return v;}catch(e){}
+  // 3) Cookie
+  try{
+    const name=DRIVE_URL_KEY+'=';
+    const ca=document.cookie.split(';');
+    for(let c of ca){c=c.trim();if(c.indexOf(name)===0){const v=decodeURIComponent(c.substring(name.length));if(v)return v;}}
+  }catch(e){}
+  // 4) Input oculto en memoria
+  try{const hid=document.getElementById('_drive_url_cache');if(hid&&hid.value)return hid.value;}catch(e){}
+  return '';
+}
 function isAdminSession(){return sessionStorage.getItem(ADMIN_SESS_KEY)==='1';}
 
 function openAdminModal(){
@@ -1258,7 +1295,7 @@ function showAdminPanel(){
 function saveAdminDriveUrl(){
   const url=document.getElementById('admin-drive-url').value.trim();
   if(!url){alert('Ingrese una URL de Google Drive.');return;}
-  localStorage.setItem(DRIVE_URL_KEY,url);
+  saveDriveUrl(url);
   updateUrlPreview(url);
 }
 function updateUrlPreview(url){
@@ -1327,49 +1364,63 @@ function showLoader(msg,sub){
 function hideLoader(){document.getElementById('global-loader').style.display='none';}
 
 async function loadFromDrive(){
-  const url=getDriveUrl();
   document.getElementById('load-ok').style.display='none';
   document.getElementById('load-err').style.display='none';
 
-  if(!url){
-    setDriveStatus('disconnected','Sin archivo configurado','El administrador debe configurar el enlace de Google Drive');
-    document.getElementById('load-err-msg').textContent='No hay un archivo Excel configurado. El administrador debe ingresar el enlace desde el panel Admin (🔐).';
-    document.getElementById('load-err').style.display='block';
-    return;
-  }
-  const id=extractDriveId(url);
-  if(!id){
-    setDriveStatus('disconnected','URL inválida','El enlace de Drive no contiene un ID de archivo válido');
-    document.getElementById('load-err-msg').textContent='La URL configurada no es válida. Revise el panel Admin.';
-    document.getElementById('load-err').style.display='block';
-    return;
-  }
+  // ── PASO 1: Buscar el .xlsx más reciente en la carpeta via API ──
+  setDriveStatus('loading','Buscando archivo en Google Drive...','Consultando carpeta configurada');
+  showLoader('Buscando datos...','Consultando carpeta de Google Drive · Por favor espere');
 
-  setDriveStatus('loading','Conectando con Google Drive...','Descargando archivo Excel');
-  showLoader('Descargando datos...','Conectando con Google Drive · Por favor espere');
-
+  let fileId=null, fileName=null;
   try{
-    const exportUrl=buildDriveExportUrl(id, url);
-    const resp=await fetch(exportUrl);
+    const query=encodeURIComponent(`'${DRIVE_FOLDER_ID}' in parents and (mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or mimeType='application/vnd.ms-excel') and trashed=false`);
+    const apiUrl=`https://www.googleapis.com/drive/v3/files?q=${query}&orderBy=modifiedTime desc&pageSize=1&fields=files(id,name,modifiedTime)&key=${DRIVE_API_KEY}`;
+    const apiResp=await fetch(apiUrl);
+    if(!apiResp.ok) throw new Error(`API Error ${apiResp.status}: No se pudo consultar la carpeta`);
+    const apiData=await apiResp.json();
+    if(!apiData.files||apiData.files.length===0){
+      hideLoader();
+      setDriveStatus('disconnected','Sin archivos en la carpeta','Suba un archivo .xlsx a la carpeta de Google Drive configurada');
+      document.getElementById('load-err-msg').textContent='No se encontró ningún archivo Excel (.xlsx) en la carpeta de Google Drive. Suba el archivo y recargue.';
+      document.getElementById('load-err').style.display='block';
+      return;
+    }
+    fileId=apiData.files[0].id;
+    fileName=apiData.files[0].name;
+    const modDate=new Date(apiData.files[0].modifiedTime).toLocaleString('es-PE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    setDriveStatus('loading',`Archivo encontrado: ${fileName}`,'Descargando archivo Excel...');
+    showLoader('Descargando datos...',`Archivo: ${fileName} · Modificado: ${modDate}`);
+  }catch(err){
+    hideLoader();
+    setDriveStatus('disconnected','Error al consultar la carpeta',err.message);
+    document.getElementById('load-err-msg').textContent=`Error al consultar carpeta de Drive: ${err.message}. Verifique que la API Key sea válida y la carpeta esté compartida públicamente.`;
+    document.getElementById('load-err').style.display='block';
+    return;
+  }
+
+  // ── PASO 2: Descargar el archivo encontrado ──
+  const downloadUrl=`https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
+  try{
+    const resp=await fetch(downloadUrl);
     if(!resp.ok) throw new Error(`HTTP ${resp.status}: No se pudo descargar el archivo`);
     const arrayBuffer=await resp.arrayBuffer();
     hideLoader();
-    processExcelBuffer(arrayBuffer,'Google Drive');
+    processExcelBuffer(arrayBuffer,`Google Drive · ${fileName}`);
   }catch(err){
     hideLoader();
     // Intento alternativo con proxy CORS si el fetch directo falla
     try{
       showLoader('Reintentando...','Usando proxy alternativo');
-      const proxyUrl=`https://corsproxy.io/?${encodeURIComponent(buildDriveExportUrl(id, url))}`;
+      const proxyUrl=`https://corsproxy.io/?${encodeURIComponent(downloadUrl)}`;
       const resp2=await fetch(proxyUrl);
       if(!resp2.ok) throw new Error(`Proxy HTTP ${resp2.status}`);
       const buf=await resp2.arrayBuffer();
       hideLoader();
-      processExcelBuffer(buf,'Google Drive (proxy)');
+      processExcelBuffer(buf,`Google Drive (proxy) · ${fileName}`);
     }catch(err2){
       hideLoader();
-      setDriveStatus('disconnected','Error de conexión',err.message);
-      document.getElementById('load-err-msg').textContent=`Error: ${err.message}. Verifique que el archivo esté compartido correctamente (acceso público de solo lectura).`;
+      setDriveStatus('disconnected','Error al descargar el archivo',err.message);
+      document.getElementById('load-err-msg').textContent=`Error: ${err.message}. Verifique que el archivo esté compartido como "Cualquiera con el enlace puede ver".`;
       document.getElementById('load-err').style.display='block';
     }
   }
