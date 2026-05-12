@@ -252,13 +252,8 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 .drive-info-s{font-size:10px;color:var(--tx3);margin-top:2px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;}
 
 /* ━━━━━ ADMIN PANEL INSIDE ━━━━━ */
-.admin-panel{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(0,80,48,.08));border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:22px;margin-bottom:18px;}
-.admin-panel-t{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
-.admin-panel-s{font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;margin-bottom:18px;letter-spacing:.04em;}
-.url-input-wrap{display:flex;gap:8px;align-items:flex-end;}
-.url-input-wrap input{flex:1;}
-.url-preview{font-size:10px;color:var(--tx3);margin-top:8px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;word-break:break-all;}
-.url-preview span{color:var(--gr-l);}
+
+
 
 /* ━━━━━ LOADING OVERLAY ━━━━━ */
 .load-overlay{position:fixed;inset:0;background:rgba(4,8,10,.92);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
@@ -589,7 +584,6 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
   <div class="ntab" onclick="showP('p-config',2)">⚙️ Configuración</div>
   <div class="ntab" onclick="showP('p-reporte',3)">📋 Reporte <span class="nbadge" id="nb-rep" style="display:none">●</span></div>
   <div class="ntab" onclick="showP('p-export',4)">💾 Exportar XLSM</div>
-  <div class="ntab" onclick="openAdminModal()" style="margin-left:auto;color:var(--gold-d);border-color:transparent;">🔐 Admin</div>
 </div>
 
 <div class="wrap">
@@ -986,81 +980,7 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
   <div class="load-sub" id="loader-sub">Conectando con Google Drive</div>
 </div>
 
-<!-- ═══════════════════════════════════════
-     MODAL: LOGIN ADMIN
-═══════════════════════════════════════ -->
-<div class="modal-overlay" id="modal-login" style="display:none">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeModal('modal-login')">✕</button>
-    <div class="shield-lg">PNP</div>
-    <div class="modal-title">Acceso Administrativo</div>
-    <div class="modal-sub">Ingrese la contraseña para acceder al panel de administración</div>
-    <div class="modal-field">
-      <label>Contraseña</label>
-      <input type="password" id="admin-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')verifyAdmin()">
-      <div class="modal-err" id="login-err">⚠ Contraseña incorrecta. Intente nuevamente.</div>
-    </div>
-    <button class="btn btn-red btn-full btn-lg" onclick="verifyAdmin()">🔐 Ingresar</button>
-  </div>
-</div>
 
-<!-- ═══════════════════════════════════════
-     MODAL: PANEL ADMIN
-═══════════════════════════════════════ -->
-<div class="modal-overlay" id="modal-admin" style="display:none">
-  <div class="modal-box" style="max-width:600px;">
-    <button class="modal-close" onclick="closeModal('modal-admin')">✕</button>
-    <div class="modal-title">🔐 Panel de Administración</div>
-    <div class="modal-sub">Solo visible para el administrador del sistema · REGPOL Amazonas</div>
-
-    <!-- Sección: Carpeta Drive (automática) -->
-    <div class="admin-panel">
-      <div class="admin-panel-t">📂 Carpeta Google Drive Configurada</div>
-      <div class="admin-panel-s">El sistema busca automáticamente el archivo Excel más reciente en la carpeta de Drive. Solo sube o reemplaza el .xlsx en esa carpeta para actualizar los datos.</div>
-      <div style="background:var(--bg3);border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;">
-        <div style="color:var(--tx3);margin-bottom:4px;">ID de Carpeta:</div>
-        <div style="color:var(--gold);word-break:break-all;font-size:12px;font-weight:700;">1vou8mxIyDmxSu3K8n-dYeekKnjgYMP1G</div>
-        <div style="color:var(--tx3);margin-top:8px;margin-bottom:2px;">Enlace directo:</div>
-        <a href="https://drive.google.com/drive/folders/1vou8mxIyDmxSu3K8n-dYeekKnjgYMP1G" target="_blank" style="color:var(--gr-l);font-size:11px;">Abrir carpeta en Drive ↗</a>
-      </div>
-      <button class="btn btn-green btn-full" onclick="closeModal('modal-admin');loadFromDrive()">
-        🔄 Recargar Datos desde la Carpeta
-      </button>
-    </div>
-
-    <!-- Sección: Cambiar contraseña -->
-    <div class="admin-panel" style="margin-top:14px;">
-      <div class="admin-panel-t">🔑 Cambiar Contraseña</div>
-      <div class="admin-panel-s">La contraseña se guarda en este navegador. Recuérdela bien.</div>
-      <div class="g2" style="gap:10px;margin-bottom:10px;">
-        <div class="modal-field" style="margin:0;">
-          <label>Nueva contraseña</label>
-          <input type="password" id="new-pwd" placeholder="Mínimo 6 caracteres">
-        </div>
-        <div class="modal-field" style="margin:0;">
-          <label>Confirmar contraseña</label>
-          <input type="password" id="new-pwd2" placeholder="Repetir contraseña">
-        </div>
-      </div>
-      <div class="modal-err" id="pwd-err" style="margin-bottom:10px;"></div>
-      <button class="btn btn-out" onclick="changePwd()">🔑 Cambiar Contraseña</button>
-    </div>
-
-    <!-- Sección: Info -->
-    <div style="background:var(--bg3);border-radius:8px;padding:14px 16px;margin-top:14px;font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;line-height:1.7;">
-      <strong style="color:var(--tx2);display:block;margin-bottom:6px;">📋 Instrucciones para actualizar datos:</strong>
-      1. Abre la carpeta de Drive: <a href="https://drive.google.com/drive/folders/1vou8mxIyDmxSu3K8n-dYeekKnjgYMP1G" target="_blank" style="color:var(--gr-l);">Abrir carpeta ↗</a><br>
-      2. Sube el nuevo archivo .xlsx (puede tener cualquier nombre)<br>
-      3. El sistema tomará automáticamente el archivo más reciente<br>
-      4. Clic en "Recargar Datos desde la Carpeta" o simplemente recarga la página<br>
-      5. <strong style="color:var(--gold);">No es necesario pegar ningún enlace</strong> · Todo es automático
-    </div>
-
-    <div style="margin-top:14px;text-align:right;">
-      <button class="btn btn-out" onclick="adminLogout()">Cerrar Sesión Admin</button>
-    </div>
-  </div>
-</div>
 
 <!-- ══════════════════════════════════════════════════════════
      JAVASCRIPT ENGINE
@@ -1210,123 +1130,10 @@ function filterRowsByPeriod(rows,pt,mRng,dFrom,dTo){
   return rows;
 }
 
-// ──────────────────────────────────────
-//  ADMIN AUTH & CONFIG (localStorage)
-// ──────────────────────────────────────
-const ADMIN_PWD_KEY  = 'pnp_admin_pwd_hash';
-const DRIVE_URL_KEY  = 'pnp_drive_url';
-const ADMIN_SESS_KEY = 'pnp_admin_session';
-const DEFAULT_PWD    = 'PNP2025'; // ← contraseña inicial (cámbiala tras primer acceso)
-
 // ── Carpeta de Google Drive (fija en el código) ──
 const DRIVE_FOLDER_ID = '1vou8mxIyDmxSu3K8n-dYeekKnjgYMP1G';
 const DRIVE_API_KEY   = 'AIzaSyDrK67oXhwjz5ShFOKVnMI6D7p2NguHp3c';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylOf54YDuopANoH5ybb4uQGbaeJKNroQG4PvyHRTuUhVGRsco4WqEuvTYcJzH0546Buw/exec';
-
-function simpleHash(str){
-  let h=0;for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;}return h.toString(36);
-}
-function getStoredPwd(){return localStorage.getItem(ADMIN_PWD_KEY)||simpleHash(DEFAULT_PWD);}
-
-// ── Guardar URL en los 3 mecanismos disponibles ──
-function saveDriveUrl(url){
-  // 1) localStorage (principal)
-  try{localStorage.setItem(DRIVE_URL_KEY, url);}catch(e){}
-  // 2) sessionStorage (respaldo en sesión)
-  try{sessionStorage.setItem(DRIVE_URL_KEY, url);}catch(e){}
-  // 3) Cookie con expiración de 1 año (más persistente en file://)
-  try{
-    const exp=new Date();exp.setFullYear(exp.getFullYear()+1);
-    document.cookie=DRIVE_URL_KEY+'='+encodeURIComponent(url)+';expires='+exp.toUTCString()+';path=/;SameSite=Lax';
-  }catch(e){}
-  // 4) Input oculto en el DOM como caché en memoria
-  try{
-    let hid=document.getElementById('_drive_url_cache');
-    if(!hid){hid=document.createElement('input');hid.type='hidden';hid.id='_drive_url_cache';document.body.appendChild(hid);}
-    hid.value=url;
-  }catch(e){}
-}
-
-// ── Leer URL desde cualquier mecanismo disponible ──
-function getDriveUrl(){
-  // 1) localStorage
-  try{const v=localStorage.getItem(DRIVE_URL_KEY);if(v)return v;}catch(e){}
-  // 2) sessionStorage
-  try{const v=sessionStorage.getItem(DRIVE_URL_KEY);if(v)return v;}catch(e){}
-  // 3) Cookie
-  try{
-    const name=DRIVE_URL_KEY+'=';
-    const ca=document.cookie.split(';');
-    for(let c of ca){c=c.trim();if(c.indexOf(name)===0){const v=decodeURIComponent(c.substring(name.length));if(v)return v;}}
-  }catch(e){}
-  // 4) Input oculto en memoria
-  try{const hid=document.getElementById('_drive_url_cache');if(hid&&hid.value)return hid.value;}catch(e){}
-  return '';
-}
-function isAdminSession(){return sessionStorage.getItem(ADMIN_SESS_KEY)==='1';}
-
-function openAdminModal(){
-  if(isAdminSession()){showAdminPanel();return;}
-  document.getElementById('admin-pwd').value='';
-  document.getElementById('login-err').style.display='none';
-  document.getElementById('modal-login').style.display='flex';
-  setTimeout(()=>document.getElementById('admin-pwd').focus(),100);
-}
-function verifyAdmin(){
-  const pwd=document.getElementById('admin-pwd').value;
-  if(simpleHash(pwd)===getStoredPwd()||pwd===DEFAULT_PWD){
-    sessionStorage.setItem(ADMIN_SESS_KEY,'1');
-    closeModal('modal-login');
-    showAdminPanel();
-  } else {
-    document.getElementById('login-err').style.display='block';
-    document.getElementById('admin-pwd').value='';
-    document.getElementById('admin-pwd').focus();
-  }
-}
-function showAdminPanel(){
-  const url=getDriveUrl();
-  document.getElementById('admin-drive-url').value=url;
-  updateUrlPreview(url);
-  document.getElementById('new-pwd').value='';
-  document.getElementById('new-pwd2').value='';
-  document.getElementById('pwd-err').style.display='none';
-  document.getElementById('modal-admin').style.display='flex';
-}
-function saveAdminDriveUrl(){
-  const url=document.getElementById('admin-drive-url').value.trim();
-  if(!url){alert('Ingrese una URL de Google Drive.');return;}
-  saveDriveUrl(url);
-  updateUrlPreview(url);
-}
-function updateUrlPreview(url){
-  const el=document.getElementById('url-preview-lbl');
-  if(!url){el.innerHTML='— sin URL configurada —';return;}
-  const id=extractDriveId(url);
-  const tipo=isGoogleSheets(url)?'Google Sheets':'Google Drive';
-  el.innerHTML=id
-    ?`✓ Tipo: <span>${tipo}</span> · ID detectado: <span>${id.substring(0,18)}...</span>`
-    :`<span style="color:var(--am-l)">⚠ No se detectó un ID válido. Verifica la URL.</span>`;
-}
-function changePwd(){
-  const p1=document.getElementById('new-pwd').value;
-  const p2=document.getElementById('new-pwd2').value;
-  const errEl=document.getElementById('pwd-err');
-  errEl.style.display='block';
-  if(p1.length<6){errEl.textContent='⚠ La contraseña debe tener al menos 6 caracteres.';return;}
-  if(p1!==p2){errEl.textContent='⚠ Las contraseñas no coinciden.';return;}
-  localStorage.setItem(ADMIN_PWD_KEY,simpleHash(p1));
-  errEl.textContent='✓ Contraseña actualizada correctamente.';
-  errEl.style.color='var(--gr-l)';
-  document.getElementById('new-pwd').value='';
-  document.getElementById('new-pwd2').value='';
-}
-function adminLogout(){
-  sessionStorage.removeItem(ADMIN_SESS_KEY);
-  closeModal('modal-admin');
-}
-function closeModal(id){document.getElementById(id).style.display='none';}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal('modal-login');closeModal('modal-admin');}});
 
 // ──────────────────────────────────────
 //  GOOGLE DRIVE LOADER
@@ -2233,7 +2040,6 @@ function exportXLSX(){
 }
 
 document.getElementById('exp-class').addEventListener('change',function(){document.getElementById('wmk-class').textContent=this.value;});
-document.getElementById('admin-drive-url').addEventListener('input',function(){updateUrlPreview(this.value);});
 
 // Inicializar
 buildMGrid();
