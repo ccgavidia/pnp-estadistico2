@@ -1220,7 +1220,8 @@ const DEFAULT_PWD    = 'PNP2025'; // ← contraseña inicial (cámbiala tras pri
 
 // ── Carpeta de Google Drive (fija en el código) ──
 const DRIVE_FOLDER_ID = '1vou8mxIyDmxSu3K8n-dYeekKnjgYMP1G';
-const DRIVE_API_KEY   = 'AIzaSyDrK67oXhwjz5ShFOKVnMI6D7p2NguHp3c'; // ← pega aquí tu API Key de Google Cloud
+const DRIVE_API_KEY   = 'AIzaSyDrK67oXhwjz5ShFOKVnMI6D7p2NguHp3c';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylOf54YDuopANoH5ybb4uQGbaeJKNroQG4PvyHRTuUhVGRsco4WqEuvTYcJzH0546Buw/exec';
 
 function simpleHash(str){
   let h=0;for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;}return h.toString(36);
@@ -1367,63 +1368,37 @@ async function loadFromDrive(){
   document.getElementById('load-ok').style.display='none';
   document.getElementById('load-err').style.display='none';
 
-  // ── PASO 1: Buscar el .xlsx más reciente en la carpeta via API ──
-  setDriveStatus('loading','Buscando archivo en Google Drive...','Consultando carpeta configurada');
+  setDriveStatus('loading','Conectando con Google Drive...','Obteniendo archivo Excel via Apps Script');
   showLoader('Buscando datos...','Consultando carpeta de Google Drive · Por favor espere');
 
-  let fileId=null, fileName=null;
   try{
-    const query=encodeURIComponent(`'${DRIVE_FOLDER_ID}' in parents and (mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' or mimeType='application/vnd.ms-excel') and trashed=false`);
-    const apiUrl=`https://www.googleapis.com/drive/v3/files?q=${query}&orderBy=modifiedTime desc&pageSize=1&fields=files(id,name,modifiedTime)&key=${DRIVE_API_KEY}`;
-    const apiResp=await fetch(apiUrl);
-    if(!apiResp.ok) throw new Error(`API Error ${apiResp.status}: No se pudo consultar la carpeta`);
-    const apiData=await apiResp.json();
-    if(!apiData.files||apiData.files.length===0){
-      hideLoader();
-      setDriveStatus('disconnected','Sin archivos en la carpeta','Suba un archivo .xlsx a la carpeta de Google Drive configurada');
-      document.getElementById('load-err-msg').textContent='No se encontró ningún archivo Excel (.xlsx) en la carpeta de Google Drive. Suba el archivo y recargue.';
-      document.getElementById('load-err').style.display='block';
-      return;
+    // ── Llamar al Apps Script que busca y devuelve el xlsx en base64 ──
+    const resp=await fetch(APPS_SCRIPT_URL);
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}: No se pudo contactar el servidor`);
+    const json=await resp.json();
+
+    if(json.error){
+      throw new Error(json.error);
     }
-    fileId=apiData.files[0].id;
-    fileName=apiData.files[0].name;
-    const modDate=new Date(apiData.files[0].modifiedTime).toLocaleString('es-PE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    setDriveStatus('loading',`Archivo encontrado: ${fileName}`,'Descargando archivo Excel...');
-    showLoader('Descargando datos...',`Archivo: ${fileName} · Modificado: ${modDate}`);
+
+    const fileName=json.name||'archivo.xlsx';
+    const modDate=json.modified?new Date(json.modified).toLocaleString('es-PE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+
+    showLoader('Procesando datos...',`Archivo: ${fileName} · Modificado: ${modDate}`);
+
+    // ── Decodificar base64 → ArrayBuffer ──
+    const binary=atob(json.data);
+    const bytes=new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+
+    hideLoader();
+    processExcelBuffer(bytes.buffer,`Google Drive · ${fileName}`);
+
   }catch(err){
     hideLoader();
-    setDriveStatus('disconnected','Error al consultar la carpeta',err.message);
-    document.getElementById('load-err-msg').textContent=`Error al consultar carpeta de Drive: ${err.message}. Verifique que la API Key sea válida y la carpeta esté compartida públicamente.`;
+    setDriveStatus('disconnected','Error al cargar datos',err.message);
+    document.getElementById('load-err-msg').textContent=`Error: ${err.message}. Verifique que el Apps Script esté publicado correctamente y la carpeta tenga archivos .xlsx.`;
     document.getElementById('load-err').style.display='block';
-    return;
-  }
-
-  // ── PASO 2: Descargar el archivo encontrado ──
-  const downloadUrl=`https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
-  const proxies=[
-    `https://corsproxy.io/?${encodeURIComponent(downloadUrl)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(downloadUrl)}`,
-    downloadUrl
-  ];
-  let downloaded=false;
-  for(let i=0;i<proxies.length;i++){
-    try{
-      showLoader('Descargando datos...',i===0?`Descargando: ${fileName}`:(i===1?'Reintentando con proxy alternativo...':'Intento directo...'));
-      const resp=await fetch(proxies[i]);
-      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const arrayBuffer=await resp.arrayBuffer();
-      hideLoader();
-      processExcelBuffer(arrayBuffer,`Google Drive · ${fileName}`);
-      downloaded=true;
-      break;
-    }catch(err){
-      if(i===proxies.length-1){
-        hideLoader();
-        setDriveStatus('disconnected','Error al descargar el archivo',err.message);
-        document.getElementById('load-err-msg').textContent=`Error al descargar: ${err.message}. Verifique que el archivo .xlsx dentro de la carpeta esté compartido como "Cualquiera con el enlace puede ver".`;
-        document.getElementById('load-err').style.display='block';
-      }
-    }
   }
 }
 
