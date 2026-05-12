@@ -1400,28 +1400,29 @@ async function loadFromDrive(){
 
   // ── PASO 2: Descargar el archivo encontrado ──
   const downloadUrl=`https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
-  try{
-    const resp=await fetch(downloadUrl);
-    if(!resp.ok) throw new Error(`HTTP ${resp.status}: No se pudo descargar el archivo`);
-    const arrayBuffer=await resp.arrayBuffer();
-    hideLoader();
-    processExcelBuffer(arrayBuffer,`Google Drive · ${fileName}`);
-  }catch(err){
-    hideLoader();
-    // Intento alternativo con proxy CORS si el fetch directo falla
+  const proxies=[
+    `https://corsproxy.io/?${encodeURIComponent(downloadUrl)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(downloadUrl)}`,
+    downloadUrl
+  ];
+  let downloaded=false;
+  for(let i=0;i<proxies.length;i++){
     try{
-      showLoader('Reintentando...','Usando proxy alternativo');
-      const proxyUrl=`https://corsproxy.io/?${encodeURIComponent(downloadUrl)}`;
-      const resp2=await fetch(proxyUrl);
-      if(!resp2.ok) throw new Error(`Proxy HTTP ${resp2.status}`);
-      const buf=await resp2.arrayBuffer();
+      showLoader('Descargando datos...',i===0?`Descargando: ${fileName}`:(i===1?'Reintentando con proxy alternativo...':'Intento directo...'));
+      const resp=await fetch(proxies[i]);
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const arrayBuffer=await resp.arrayBuffer();
       hideLoader();
-      processExcelBuffer(buf,`Google Drive (proxy) · ${fileName}`);
-    }catch(err2){
-      hideLoader();
-      setDriveStatus('disconnected','Error al descargar el archivo',err.message);
-      document.getElementById('load-err-msg').textContent=`Error: ${err.message}. Verifique que el archivo esté compartido como "Cualquiera con el enlace puede ver".`;
-      document.getElementById('load-err').style.display='block';
+      processExcelBuffer(arrayBuffer,`Google Drive · ${fileName}`);
+      downloaded=true;
+      break;
+    }catch(err){
+      if(i===proxies.length-1){
+        hideLoader();
+        setDriveStatus('disconnected','Error al descargar el archivo',err.message);
+        document.getElementById('load-err-msg').textContent=`Error al descargar: ${err.message}. Verifique que el archivo .xlsx dentro de la carpeta esté compartido como "Cualquiera con el enlace puede ver".`;
+        document.getElementById('load-err').style.display='block';
+      }
     }
   }
 }
