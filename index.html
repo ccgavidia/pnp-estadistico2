@@ -10,7 +10,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --cr:#005030;--cr-d:#003520;--cr-l:#007a41;--cr-glow:rgba(0,80,48,.35);
+  --cr:#005030;--cr-d:#003520;--cr-l:#007a41;--cr-glow:rgba(0,80,48,.35);--go:#3adb76;--red-diff:#e05555;
   --gold:#C9A84C;--gold-l:#e8c96b;--gold-d:#a07830;
   --bg:#04080a;--bg2:#0a0f0d;--bg3:#101812;--bg4:#162018;--bg5:#1e2a20;
   --bd:#1a2e20;--bd2:#22402a;--bd3:#2e5238;
@@ -595,14 +595,14 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
      PANEL 0: CARGA (Google Drive)
 ═══════════════════════════════════════ -->
 <div class="panel on" id="p-carga">
-  <div class="sh"><div class="sh-ico">📂</div><div class="sh-title">Estado del Sistema</div><div class="sh-sub">Datos vía Google Drive · Solo lectura</div></div>
+  <div class="sh"><div class="sh-ico">📂</div><div class="sh-title">Estado del Sistema</div><div class="sh-sub">Datos vía Estadistica Amazonas · Solo lectura</div></div>
 
   <!-- Estado de conexión -->
   <div class="drive-status" id="drive-status-bar">
     <div class="drive-dot loading" id="drive-dot"></div>
     <div class="drive-info">
-      <div class="drive-info-t" id="drive-status-t">Verificando conexión con Google Drive...</div>
-      <div class="drive-info-s" id="drive-status-s">El sistema carga el archivo Excel automáticamente</div>
+      <div class="drive-info-t" id="drive-status-t">Verificando conexión con la Base de Datos...</div>
+      <div class="drive-info-s" id="drive-status-s">El sistema carga el archivo automáticamente</div>
     </div>
     <button class="btn btn-out" onclick="loadFromDrive()" style="font-size:10px;padding:7px 14px;flex-shrink:0;">🔄 Recargar</button>
   </div>
@@ -812,19 +812,29 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
       <button class="mt-btn on" id="mode-div" onclick="setMode('division')">🏢 Por Divisiones</button>
       <button class="mt-btn" id="mode-com" onclick="setMode('comisaria')">🏠 Por Comisarías</button>
     </div>
-    <div id="mode-info" style="font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;"></div>
+    <div id="mode-info" style="font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;margin-bottom:14px;"></div>
+    <label id="cmp-toggle-label" style="display:inline-flex;align-items:center;gap:10px;cursor:pointer;padding:10px 16px;background:var(--bg4);border:1px solid var(--bd2);border-radius:8px;transition:border-color .2s;">
+      <input type="checkbox" id="cmp-check" onchange="toggleComparativo()" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--tx2);letter-spacing:.08em;text-transform:uppercase;">📊 Activar comparativo por años</span>
+    </label>
   </div>
   <div class="card">
     <div class="card-t">Selección de años y periodo</div>
-    <div class="g2" style="margin-bottom:16px;">
+    <!-- Fila de selectores: cambia de g2 a g3 cuando hay comparativo -->
+    <div id="years-row" class="g2" style="margin-bottom:16px;">
       <div>
         <label class="lbl">Año principal de análisis</label>
         <select id="yr-main"><option value="">— Seleccionar —</option></select>
       </div>
+      <!-- Año comparativo: oculto hasta activar el check -->
+      <div id="yr-comp-wrap" style="display:none;">
+        <label class="lbl">Año comparativo</label>
+        <select id="yr-comp-rep" onchange="toggleCmpPeriod();chkReady()"><option value="">— Sin comparativa —</option></select>
+      </div>
       <div>
         <label class="lbl">Tipo de periodo</label>
         <select id="rep-ptype" onchange="togglePP()">
-          <option value="full">Año completo</option>
+          <option value="full" id="opt-full">Año completo</option>
           <option value="months">Rango de meses</option>
           <option value="days">Fechas exactas</option>
         </select>
@@ -837,13 +847,18 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
     </div>
     <div id="pp-d" style="display:none;">
       <div class="g2">
-        <div><label class="lbl">Fecha desde</label><input type="date" id="df"></div>
-        <div><label class="lbl">Fecha hasta</label><input type="date" id="dt"></div>
+        <div><label class="lbl">Fecha desde (año principal)</label><input type="date" id="df"></div>
+        <div><label class="lbl">Fecha hasta (año principal)</label><input type="date" id="dt"></div>
+      </div>
+      <div class="g2" id="pp-d-comp" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd2);">
+        <div><label class="lbl">Fecha desde (año comparativo)</label><input type="date" id="df2"></div>
+        <div><label class="lbl">Fecha hasta (año comparativo)</label><input type="date" id="dt2"></div>
       </div>
     </div>
     <div id="pp-f" style="display:block;">
       <div style="background:var(--bg4);border-radius:6px;padding:9px 14px;display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--tx3);letter-spacing:.05em;margin-top:8px;">📅 Todo el año seleccionado</div>
     </div>
+
   </div>
   <div class="card">
     <div class="card-t">Unidades a incluir</div>
@@ -925,7 +940,7 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
         <div class="card"><div class="card-t">Ranking: Detenidos Delitos</div><div id="rk-det"></div></div>
       </div>
       <div class="card">
-        <div class="card-t">Tabla Completa de Indicadores</div>
+        <div class="card-t" id="tbl-card-title">Tabla Completa de Indicadores</div>
         <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;" class="no-pdf">
           <input type="text" id="tbl-q" placeholder="Buscar indicador..." style="max-width:260px;" oninput="filterTbl()">
           <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx3);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:.05em;text-transform:uppercase;">
@@ -934,6 +949,7 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
         </div>
         <div class="tbl-wrap"><table class="dt" id="dtbl"></table></div>
       </div>
+
     </div><!-- /reporte-pdf-area -->
   </div>
 </div>
@@ -1067,6 +1083,10 @@ function setSt(id,type,msg){
 //  UTILIDADES
 // ──────────────────────────────────────
 function shortN(name){
+  if(!name) return name;
+  // Nombres ya normalizados por normalizeDivision — mostrar directamente
+  if(name==='DIVINCRI') return 'DIVINCRI';
+  if(name==='CHACHAPOYAS') return 'CHACHAPOYAS';
   return name
     .replace(/DIVOPUS PNP\s*/i,'')
     .replace(/DIVINCRI PNP\s*/i,'')
@@ -1085,15 +1105,35 @@ function fmtVal(k,v){
   return v.toLocaleString();
 }
 
+// Normaliza nombres de división: renombra AMAZONAS→DIVINCRI y fusiona DUE AMAZONAS→CHACHAPOYAS
+function normalizeDivision(name){
+  if(!name) return name;
+  const n=name.trim().toUpperCase().replace(/\s+/g,' ');
+  // AMAZONAS / DIVINCRI → DIVINCRI
+  if(n==='AMAZONAS'||n.includes('DIVINCRI')) return 'DIVINCRI';
+  // DUE AMAZONAS → fusionar a CHACHAPOYAS
+  if(n.includes('DUE')) return 'CHACHAPOYAS';
+  // CHACHAPOYAS (cualquier variante) → CHACHAPOYAS
+  if(n.includes('CHACHAPOYAS')) return 'CHACHAPOYAS';
+  // NIEVA (cualquier variante) → NIEVA
+  if(n.includes('NIEVA')) return 'NIEVA';
+  // UTCUBAMBA (cualquier variante) → UTCUBAMBA
+  if(n.includes('UTCUBAMBA')) return 'UTCUBAMBA';
+  return name.trim();
+}
+
 function getUnitOfRow(r){
   const candidates=mode==='division'?['DIVISION','DIVISIÓN']:['COMISARIA','COMISARÍA','COMISARIA PNP','SUBUNIDAD'];
-  for(const c of candidates){const v=r[c.toUpperCase()]||r[c];if(v)return v;}
+  for(const c of candidates){const v=r[c.toUpperCase()]||r[c];if(v){
+    // Aplicar normalización solo en modo división
+    return mode==='division'?normalizeDivision(v):v;
+  }}
   return null;
 }
 
 function getUnitOfRowByGroup(r,grp){
   if(grp==='division'||grp==='region'){
-    const v=r['DIVISION']||r['DIVISIÓN'];return v||null;
+    const v=r['DIVISION']||r['DIVISIÓN'];return v?normalizeDivision(v):null;
   }
   if(grp==='comisaria'){
     const v=r['COMISARIA']||r['COMISARÍA']||r['COMISARIA PNP']||r['SUBUNIDAD'];return v||null;
@@ -1178,8 +1218,8 @@ async function loadFromDrive(){
   document.getElementById('load-ok').style.display='none';
   document.getElementById('load-err').style.display='none';
 
-  setDriveStatus('loading','Conectando con Google Drive...','Obteniendo archivo Excel via Apps Script');
-  showLoader('Buscando datos...','Consultando carpeta de Google Drive · Por favor espere');
+  setDriveStatus('loading','Conectando con Base de Datos...','Obteniendo archivos');
+  showLoader('Buscando datos...','Consultando Base de Datos · Por favor espere');
 
   try{
     // ── Llamar al Apps Script que busca y devuelve el xlsx en base64 ──
@@ -1257,6 +1297,9 @@ function processExcelBuffer(arrayBuffer, source){
     yrMainSel.innerHTML='<option value="">— Seleccionar —</option>';
     availYears.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;yrMainSel.appendChild(o);});
     document.getElementById('yr-main').onchange=function(){buildUnits();chkReady();};
+    const yrCompRep=document.getElementById('yr-comp-rep');
+    yrCompRep.innerHTML='<option value="">— Sin comparativa —</option>';
+    availYears.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;yrCompRep.appendChild(o);});
 
     buildIndPills();buildMGrid();
     initDashSelectors();
@@ -1832,6 +1875,10 @@ function togglePP(){
   document.getElementById('pp-m').style.display=v==='months'?'block':'none';
   document.getElementById('pp-d').style.display=v==='days'?'block':'none';
   document.getElementById('pp-f').style.display=v==='full'?'block':'none';
+  // Mostrar segundo par de fechas si hay comparativo y el periodo es "days"
+  const hasComp=!!(document.getElementById('yr-comp-rep')||{value:''}).value;
+  const ppDComp=document.getElementById('pp-d-comp');
+  if(ppDComp) ppDComp.style.display=(v==='days'&&hasComp)?'grid':'none';
   chkReady();
 }
 function chkReady(){
@@ -1839,18 +1886,80 @@ function chkReady(){
   const pt=document.getElementById('rep-ptype').value;
   let ok=false;
   if(pt==='months')ok=mRange.length===2;
-  else if(pt==='days')ok=!!(document.getElementById('df').value&&document.getElementById('dt').value);
+  else if(pt==='days'){
+    const df=document.getElementById('df').value;
+    const dt=document.getElementById('dt').value;
+    ok=!!(df&&dt);
+  }
   else ok=true;
   document.getElementById('gbtn').disabled=!(yr&&ok&&selUnitsSet.size>0&&selIndsSet.size>0);
+}
+
+function toggleComparativo(){
+  const on=document.getElementById('cmp-check').checked;
+  const wrap=document.getElementById('yr-comp-wrap');
+  const row=document.getElementById('years-row');
+  const optFull=document.getElementById('opt-full');
+  const ptSel=document.getElementById('rep-ptype');
+  const lbl=document.getElementById('cmp-toggle-label');
+  if(on){
+    // Mostrar columna año comparativo y cambiar grid a 3 cols
+    wrap.style.display='block';
+    row.style.gridTemplateColumns='1fr 1fr 1fr';
+    // Ocultar "Año completo" y forzar a meses si estaba en full
+    if(optFull) optFull.style.display='none';
+    if(ptSel.value==='full'){ptSel.value='months';togglePP();}
+    if(lbl) lbl.style.borderColor='var(--gold)';
+  } else {
+    // Ocultar comparativo y volver a 2 cols
+    wrap.style.display='none';
+    row.style.gridTemplateColumns='1fr 1fr';
+    if(optFull) optFull.style.display='';
+    // Resetear selector comparativo
+    const yrComp=document.getElementById('yr-comp-rep');
+    if(yrComp) yrComp.value='';
+    // Ocultar fechas del comparativo
+    const ppDComp=document.getElementById('pp-d-comp');
+    if(ppDComp) ppDComp.style.display='none';
+    if(lbl) lbl.style.borderColor='var(--bd2)';
+  }
+  chkReady();
+}
+
+function toggleCmpPeriod(){
+  const cmpOn=document.getElementById('cmp-check')&&document.getElementById('cmp-check').checked;
+  const yrComp=cmpOn?(document.getElementById('yr-comp-rep').value||''):'';
+  // Ocultar opción "Año completo" cuando hay comparativo activo
+  const optFull=document.getElementById('opt-full');
+  if(optFull){
+    optFull.style.display=yrComp?'none':'';
+    const ptSel=document.getElementById('rep-ptype');
+    if(yrComp&&ptSel.value==='full'){ptSel.value='months';togglePP();}
+  }
+  // Mostrar segundo par de fechas si periodo es "days" y hay comparativo
+  const pt=(document.getElementById('rep-ptype')||{value:''}).value;
+  const ppDComp=document.getElementById('pp-d-comp');
+  if(ppDComp) ppDComp.style.display=(pt==='days'&&yrComp)?'grid':'none';
+  chkReady();
 }
 
 // ──────────────────────────────────────
 //  FILTRAR POR PERIODO (reporte)
 // ──────────────────────────────────────
-function filterByPeriod(rows,pt){
+function filterByPeriod(rows,pt,isComp){
   if(pt==='full') return rows;
   if(pt==='months'){return rows.filter(r=>{const mi=MONTHS.indexOf((r['MES']||'').toString().trim().toUpperCase());return mi>=mRange[0]&&mi<=mRange[1];});}
-  if(pt==='days'){const from=new Date(document.getElementById('df').value+'T00:00:00');const to=new Date(document.getElementById('dt').value+'T23:59:59');return rows.filter(r=>{const d=r['FECHA']?new Date(r['FECHA']):null;return d&&d>=from&&d<=to;});}
+  if(pt==='days'){
+    // Si es el comparativo y tiene fechas propias (df2/dt2), usarlas
+    const df2El=document.getElementById('df2');
+    const dt2El=document.getElementById('dt2');
+    const useOwn=isComp&&df2El&&dt2El&&df2El.value&&dt2El.value;
+    const fromStr=useOwn?df2El.value:document.getElementById('df').value;
+    const toStr=useOwn?dt2El.value:document.getElementById('dt').value;
+    const from=new Date(fromStr+'T00:00:00');
+    const to=new Date(toStr+'T23:59:59');
+    return rows.filter(r=>{const d=r['FECHA']?new Date(r['FECHA']):null;return d&&d>=from&&d<=to;});
+  }
   return rows;
 }
 
@@ -1888,7 +1997,24 @@ function genReport(){
   else if(pt==='days')periodLbl=`${document.getElementById('df').value} al ${document.getElementById('dt').value}`;
   else periodLbl=`Año ${yr} completo`;
   const result=calcResult(rows,units);
-  rData={result,units,periodLbl,yr,mode,ts:new Date().toLocaleString('es-PE')};
+  // Calcular resultado del año comparativo si fue elegido
+  const yrComp=document.getElementById('yr-comp-rep').value;
+  let resultComp=null;
+  let periodLblComp='';
+  if(yrComp && WB[yrComp]){
+    let rowsComp=WB[yrComp].filter(r=>selUnitsSet.has(getUnitOfRow(r)));
+    // Aplicar mismo periodo al comparativo (meses igual, fechas con df2/dt2 si existen)
+    rowsComp=filterByPeriod(rowsComp,pt,true);
+    if(pt==='months') periodLblComp=mRange[0]===mRange[1]?`${MNAMES[mRange[0]]} ${yrComp}`:`${MNAMES[mRange[0]]} – ${MNAMES[mRange[1]]} ${yrComp}`;
+    else if(pt==='days'){
+      const df2El=document.getElementById('df2');
+      const dt2El=document.getElementById('dt2');
+      const useOwn=df2El&&dt2El&&df2El.value&&dt2El.value;
+      periodLblComp=useOwn?`${df2El.value} al ${dt2El.value}`:`${document.getElementById('df').value} al ${document.getElementById('dt').value} (${yrComp})`;
+    } else periodLblComp=`Año ${yrComp} completo`;
+    resultComp=calcResult(rowsComp,units);
+  }
+  rData={result,units,periodLbl,yr,mode,ts:new Date().toLocaleString('es-PE'),yrComp,resultComp,periodLblComp};
   renderReport(rData);
   setSt('st-gen','st-ok','✓ Reporte generado · '+rows.length.toLocaleString()+' registros');
   document.getElementById('nb-rep').style.display='inline';
@@ -1914,7 +2040,16 @@ function renderReport({result,units,periodLbl,yr,mode}){
     <div class="kpi k-amber"><div class="kpi-lbl">Unidades</div><div class="kpi-val">${units.length}</div></div>`;
   renderRank('rk-ops','OPERATIVOS',result,units);
   renderRank('rk-det','DETENIDOS DELITOS PER.',result,units);
+  // Actualizar título del card según modo
+  const tblTitle=document.getElementById('tbl-card-title');
+  if(tblTitle){
+    if(rData.yrComp&&rData.resultComp)
+      tblTitle.textContent='Cuadro Comparativo '+rData.yr+' vs '+rData.yrComp;
+    else
+      tblTitle.textContent='Tabla Completa de Indicadores';
+  }
   renderTable(result,units);
+  renderCmpTable(rData);
 }
 
 function renderRank(elId,key,result,units){
@@ -1926,9 +2061,11 @@ function renderRank(elId,key,result,units){
 }
 
 function renderTable(result,units){
+  // Si hay comparativo, delegar a renderCmpTable que usa el mismo #dtbl
+  if(rData&&rData.yrComp&&rData.resultComp){renderCmpTable(rData);return;}
   const items=Object.keys(result);
   const cols=[...units,'TOTAL'];
-  let h=`<thead><tr class="hdr1"><th>INDICADORES</th>${cols.map(u=>`<th>${shortN(u)}</th>`).join('')}</tr></thead><tbody>`;
+  let h=`<thead><tr class="hdr1"><th>INDICADORES / UNIDADES</th>${cols.map(u=>`<th>${shortN(u)}</th>`).join('')}</tr></thead><tbody>`;
   items.forEach(item=>{
     const row=result[item];
     h+=`<tr data-q="${item.toLowerCase()}" data-tot="${row['TOTAL']||0}"><td>${item}</td>`;
@@ -1945,6 +2082,54 @@ function filterTbl(){
     const matchZ=!hz||parseFloat(r.dataset.tot)>0;
     r.style.display=(matchQ&&matchZ)?'':'none';
   });
+}
+
+// ──────────────────────────────────────
+//  CUADRO COMPARATIVO UNIFICADO (un solo #dtbl)
+// ──────────────────────────────────────
+function renderCmpTable(data){
+  if(!data||!data.yrComp||!data.resultComp) return;
+  const {result,resultComp,units,yr,yrComp,periodLbl,periodLblComp}=data;
+  const items=Object.keys(result);
+  const cols=[...units]; // Sin columna TOTAL en el comparativo
+  // Fila 1 cabecera: INDICADORES/UNIDADES | colspan=3 por unidad
+  let h='<thead>';
+  h+='<tr class="hdr1" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;">';
+  h+='<th rowspan="2" style="vertical-align:middle;min-width:160px;">INDICADORES / UNIDADES</th>';
+  cols.forEach(u=>{
+    h+=`<th colspan="3" style="text-align:center;background:var(--bg3);">${shortN(u)}</th>`;
+  });
+  h+='</tr>';
+  // Fila 2: año principal | año comparativo | diferencia
+  h+='<tr class="hdr1" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;">';
+  cols.forEach(()=>{
+    h+=`<th style="text-align:center;font-size:9px;color:var(--gold);white-space:nowrap;">${periodLbl}</th>`;
+    h+=`<th style="text-align:center;font-size:9px;color:var(--tx3);white-space:nowrap;">${periodLblComp||yrComp}</th>`;
+    h+=`<th style="text-align:center;font-size:9px;color:var(--cr-l);white-space:nowrap;">DIFERENCIA</th>`;
+  });
+  h+='</tr></thead><tbody>';
+  items.forEach(item=>{
+    const row=result[item]||{};
+    const rowC=resultComp[item]||{};
+    const totV=row['TOTAL']||0;
+    h+=`<tr data-q="${item.toLowerCase()}" data-tot="${totV}"><td>${item}</td>`;
+    cols.forEach(u=>{
+      const v=row[u]||0;
+      const vc=rowC[u]||0;
+      const diff=v-vc;
+      const clsBase=u==='TOTAL'?'tot':'';
+      const clsZ=v===0?'z':'';
+      const clsZc=vc===0?'z':'';
+      const arrow=diff>0?'▲ ':diff<0?'▼ ':'● ';
+      const diffColor=diff>0?'color:var(--go)':diff<0?'color:var(--red-diff)':'color:var(--tx3)';
+      const diffStr=diff===0?'0':(diff>0?'+':'')+fmtVal(item,diff);
+      h+=`<td class="${clsBase} ${clsZ}">${fmtVal(item,v)}</td>`;
+      h+=`<td class="${clsBase} ${clsZc}" style="color:var(--tx3);">${fmtVal(item,vc)}</td>`;
+      h+=`<td class="${clsBase}" style="${diffColor};font-weight:700;">${arrow}${diffStr}</td>`;
+    });
+    h+='</tr>';
+  });
+  document.getElementById('dtbl').innerHTML=h+'</tbody>';
 }
 
 
