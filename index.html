@@ -440,8 +440,11 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 .filter-section{
   background:var(--bg2);border:1px solid var(--bd2);border-radius:10px;
   padding:16px 20px;margin-bottom:18px;
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;
+  display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;
 }
+.filter-section .f-group{flex:1;min-width:130px;max-width:200px;}
+.filter-section .f-group-yr{flex:0 0 110px;min-width:110px;max-width:110px;}
+.filter-section-pdf-row{display:flex;align-items:flex-end;flex-shrink:0;margin-left:auto;}
 .f-group{display:flex;flex-direction:column;gap:5px;}
 .f-group label{font-size:9px;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;}
 
@@ -648,11 +651,11 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 
     <!-- FILTROS -->
     <div class="filter-section">
-      <div class="f-group">
+      <div class="f-group f-group-yr">
         <label>Año Principal (actual)</label>
         <select id="yr-sel" onchange="updAnalysis()"></select>
       </div>
-      <div class="f-group">
+      <div class="f-group f-group-yr">
         <label>Año Comparativa</label>
         <select id="yr-comp" onchange="updAnalysis()"></select>
       </div>
@@ -690,7 +693,7 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
           <input type="date" id="d-dt" onchange="updAnalysis()">
         </div>
       </div>
-      <div class="f-group" style="justify-content:flex-end;">
+      <div class="filter-section-pdf-row">
         <button class="btn-pdf" onclick="saveAsPDF()">📄 Guardar PDF</button>
       </div>
     </div>
