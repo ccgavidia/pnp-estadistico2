@@ -807,9 +807,9 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
     <div class="exp-hdr">
       <div><div class="exp-title" id="exp-title">—</div><div class="exp-meta" id="exp-meta">—</div></div>
       <div class="btn-group" id="btn-area">
-        <button class="btn btn-gold" onclick="dlCSV()">⬇ CSV</button>
+        <button class="btn btn-gold" onclick="dlExcelReporte()" id="btn-excel-rep">⬇ Excel</button>
 
-        <button class="btn btn-pdf" onclick="saveReportePDF()" style="padding:11px 20px;font-size:11px;">📄 Guardar PDF</button>
+        <button class="btn btn-pdf" onclick="saveReporteTablaPDF()" style="padding:11px 20px;font-size:11px;">📄 Guardar PDF</button>
       </div>
     </div>
 
@@ -890,15 +890,43 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 //  LÓGICA DE LA INTRO ANIMADA
 // ──────────────────────────────────────
 window.addEventListener('load', () => {
-  // La animación CSS total dura aprox 4 segundos.
-  // Después de 3.8s, ocultamos el div con una transición y luego lo borramos del flujo.
+  // ── Iniciar carga de datos inmediatamente junto con el intro ──
+  const introText = document.querySelector('.intro-text');
+  const introBar  = document.querySelector('.intro-progress');
+
+  // Actualizar texto del intro mientras carga
+  function setIntroStatus(msg) {
+    if (introText) introText.innerHTML = msg + ' <span style="color:var(--go);font-weight:900;" class="blink">_</span>';
+  }
+
+  setIntroStatus('Conectando con el servidor');
+
+  // Lanzar carga de datos en paralelo con la animación
+  const dataPromise = loadFromDrive().catch(() => {}); // el error se maneja dentro de loadFromDrive
+
+  // Actualizar estado visual durante la carga
+  const statusInterval = setInterval(() => {
+    const dot = document.getElementById('drive-dot');
+    if (dot && dot.classList.contains('connected')) {
+      setIntroStatus('Datos cargados · Iniciando sistema');
+      clearInterval(statusInterval);
+    } else if (dot && dot.classList.contains('disconnected')) {
+      setIntroStatus('Error de conexión · Verifique el servidor');
+      clearInterval(statusInterval);
+    } else {
+      setIntroStatus('Procesando base de datos');
+    }
+  }, 800);
+
+  // Después de 3.8s, ocultar intro (hayan terminado o no los datos)
   setTimeout(() => {
+    clearInterval(statusInterval);
     const intro = document.getElementById('intro-overlay');
     if(intro) {
-      intro.classList.add('intro-hidden'); // Activa la transición de opacidad y escala en CSS
+      intro.classList.add('intro-hidden');
       setTimeout(() => {
         intro.style.display = 'none';
-      }, 800); // 800ms es el tiempo que dura la transición en el CSS
+      }, 800);
     }
   }, 3800);
 });
@@ -2032,18 +2060,663 @@ function renderCmpTable(data){
 
 
 // ──────────────────────────────────────
-//  EXPORTAR CSV
+//  EXPORTAR EXCEL CON FORMATO PNP (reemplaza CSV)
 // ──────────────────────────────────────
-function dlCSV(){
-  if(!rData)return;
-  const{result,units,periodLbl,yr,ts,mode}=rData;
-  const cols=[...units,'TOTAL'];
-  let csv=`"CONSOLIDADO PNP REGIÓN AMAZONAS - ${periodLbl}"\n"Modo: ${mode==='division'?'Divisiones':'Comisarías'}"\n"Generado: ${ts}"\n\n`;
-  csv+=`"INDICADORES",${cols.map(u=>`"${u}"`).join(',')}\n`;
-  Object.entries(result).forEach(([item,row])=>{csv+=`"${item}",${cols.map(u=>(row[u]||0)).join(',')}\n`;});
-  dl(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),`PNP_Amazonas_${yr}_${periodLbl.replace(/[^\w]/g,'_')}.csv`);
-}
 function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+
+function dlExcelReporte(){
+  if(!rData){alert('Genera un reporte primero.');return;}
+  const btn=document.getElementById('btn-excel-rep');
+  const origTxt=btn?btn.innerHTML:'';
+  if(btn){btn.innerHTML='⏳ Generando...';btn.disabled=true;}
+  try{
+    const{result,resultComp,units,periodLbl,periodLblComp,yr,yrComp,mode,ts}=rData;
+    const esComp=!!(yrComp&&resultComp);
+    const items=Object.keys(result);
+    const modoLbl=mode==='division'?'Por Divisiones PNP':'Por Comisarías / Subunidades';
+    const wb=XLSX.utils.book_new();
+
+    // ── PALETA DE COLORES INSTITUCIONAL PNP ──
+    // Verde PNP oscuro: #004D28  /  Verde medio: #005A36  /  Dorado: #D4AF37
+    // Verde cabecera: #002B16    /  Blanco: #FFFFFF        /  Gris claro: #E8ECEA
+    // Rojo diferencia negativa: #B82400  /  Verde diferencia positiva: #1B8550
+
+    const STY={
+      // Cabecera institucional (título principal)
+      instTitle:{
+        font:{name:'Arial',sz:14,bold:true,color:{rgb:'D4AF37'}},
+        fill:{fgColor:{rgb:'002B16'}},
+        alignment:{horizontal:'center',vertical:'center',wrapText:true},
+        border:{bottom:{style:'medium',color:{rgb:'D4AF37'}}}
+      },
+      instSub:{
+        font:{name:'Arial',sz:11,bold:true,color:{rgb:'E8ECEA'}},
+        fill:{fgColor:{rgb:'004D28'}},
+        alignment:{horizontal:'center',vertical:'center',wrapText:true}
+      },
+      instMeta:{
+        font:{name:'Arial',sz:9,color:{rgb:'A3B3AA'}},
+        fill:{fgColor:{rgb:'002B16'}},
+        alignment:{horizontal:'center',vertical:'center',wrapText:true}
+      },
+      // Cabecera de columnas
+      colHdr:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'FFFFFF'}},
+        fill:{fgColor:{rgb:'005A36'}},
+        alignment:{horizontal:'center',vertical:'center',wrapText:true},
+        border:{
+          top:{style:'thin',color:{rgb:'D4AF37'}},
+          bottom:{style:'thin',color:{rgb:'D4AF37'}},
+          left:{style:'thin',color:{rgb:'2D3D32'}},
+          right:{style:'thin',color:{rgb:'2D3D32'}}
+        }
+      },
+      // Cabecera sub (año principal / comparativo / diferencia)
+      colHdrPrin:{
+        font:{name:'Arial',sz:8,bold:true,color:{rgb:'D4AF37'}},
+        fill:{fgColor:{rgb:'003B23'}},
+        alignment:{horizontal:'center',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'D4AF37'}},left:{style:'thin',color:{rgb:'2D3D32'}},right:{style:'thin',color:{rgb:'2D3D32'}}}
+      },
+      colHdrComp:{
+        font:{name:'Arial',sz:8,bold:true,color:{rgb:'A3B3AA'}},
+        fill:{fgColor:{rgb:'003B23'}},
+        alignment:{horizontal:'center',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'2D3D32'}},left:{style:'thin',color:{rgb:'2D3D32'}},right:{style:'thin',color:{rgb:'2D3D32'}}}
+      },
+      colHdrDiff:{
+        font:{name:'Arial',sz:8,bold:true,color:{rgb:'24B26B'}},
+        fill:{fgColor:{rgb:'003B23'}},
+        alignment:{horizontal:'center',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'2D3D32'}},left:{style:'thin',color:{rgb:'2D3D32'}},right:{style:'thin',color:{rgb:'2D3D32'}}}
+      },
+      // Primera columna (nombre indicador)
+      indNormal:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'E8ECEA'}},
+        fill:{fgColor:{rgb:'151D18'}},
+        alignment:{horizontal:'left',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},right:{style:'thin',color:{rgb:'3B4F42'}}}
+      },
+      indAlt:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'E8ECEA'}},
+        fill:{fgColor:{rgb:'101612'}},
+        alignment:{horizontal:'left',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},right:{style:'thin',color:{rgb:'3B4F42'}}}
+      },
+      // Celda valor normal
+      valNormal:{
+        font:{name:'Arial',sz:9,color:{rgb:'A3B3AA'}},
+        fill:{fgColor:{rgb:'151D18'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},left:{style:'thin',color:{rgb:'212E26'}},right:{style:'thin',color:{rgb:'212E26'}}}
+      },
+      valAlt:{
+        font:{name:'Arial',sz:9,color:{rgb:'A3B3AA'}},
+        fill:{fgColor:{rgb:'101612'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},left:{style:'thin',color:{rgb:'212E26'}},right:{style:'thin',color:{rgb:'212E26'}}}
+      },
+      // Celda TOTAL (columna total)
+      valTotal:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'D4AF37'}},
+        fill:{fgColor:{rgb:'1B261F'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},left:{style:'medium',color:{rgb:'D4AF37'}},right:{style:'thin',color:{rgb:'212E26'}}}
+      },
+      valTotalAlt:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'D4AF37'}},
+        fill:{fgColor:{rgb:'151D18'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},left:{style:'medium',color:{rgb:'D4AF37'}},right:{style:'thin',color:{rgb:'212E26'}}}
+      },
+      // Celda cero
+      valZero:{
+        font:{name:'Arial',sz:9,color:{rgb:'54665C'}},
+        fill:{fgColor:{rgb:'151D18'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},left:{style:'thin',color:{rgb:'212E26'}},right:{style:'thin',color:{rgb:'212E26'}}}
+      },
+      valZeroAlt:{
+        font:{name:'Arial',sz:9,color:{rgb:'54665C'}},
+        fill:{fgColor:{rgb:'101612'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},left:{style:'thin',color:{rgb:'212E26'}},right:{style:'thin',color:{rgb:'212E26'}}}
+      },
+      // Diferencia positiva / negativa / neutra
+      diffPos:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'1B8550'}},
+        fill:{fgColor:{rgb:'151D18'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},left:{style:'thin',color:{rgb:'212E26'}},right:{style:'thin',color:{rgb:'212E26'}}}
+      },
+      diffPosAlt:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'1B8550'}},
+        fill:{fgColor:{rgb:'101612'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},left:{style:'thin',color:{rgb:'212E26'}},right:{style:'thin',color:{rgb:'212E26'}}}
+      },
+      diffNeg:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'B82400'}},
+        fill:{fgColor:{rgb:'151D18'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},left:{style:'thin',color:{rgb:'212E26'}},right:{style:'thin',color:{rgb:'212E26'}}}
+      },
+      diffNegAlt:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'B82400'}},
+        fill:{fgColor:{rgb:'101612'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{bottom:{style:'thin',color:{rgb:'212E26'}},left:{style:'thin',color:{rgb:'212E26'}},right:{style:'thin',color:{rgb:'212E26'}}}
+      },
+      // Fila de TOTALES GENERALES
+      totRow:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'D4AF37'}},
+        fill:{fgColor:{rgb:'002B16'}},
+        alignment:{horizontal:'right',vertical:'center'},
+        border:{top:{style:'medium',color:{rgb:'D4AF37'}},bottom:{style:'medium',color:{rgb:'D4AF37'}},left:{style:'thin',color:{rgb:'2D3D32'}},right:{style:'thin',color:{rgb:'2D3D32'}}}
+      },
+      totRowLbl:{
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'D4AF37'}},
+        fill:{fgColor:{rgb:'002B16'}},
+        alignment:{horizontal:'left',vertical:'center'},
+        border:{top:{style:'medium',color:{rgb:'D4AF37'}},bottom:{style:'medium',color:{rgb:'D4AF37'}},left:{style:'thin',color:{rgb:'2D3D32'}},right:{style:'thin',color:{rgb:'2D3D32'}}}
+      }
+    };
+
+    // Función auxiliar para asignar estilo a celda
+    function sc(ws,addr,v,s,numFmt){
+      ws[addr]={v,s,t:typeof v==='number'?'n':'s'};
+      if(numFmt) ws[addr].z=numFmt;
+    }
+
+    // ─── HOJA PRINCIPAL: CUADRO SOLICITADO ───
+    {
+      const wsData=[];
+      const wsMerges=[];
+      let R=0; // fila actual (0-based)
+
+      // ── CABECERA INSTITUCIONAL (filas 0-3) ──
+      const totalCols = esComp ? 1 + units.length*3 : 1 + units.length + 1; // ind + cols + total
+      wsData.push([null]); // fila 0: título
+      wsData.push([null]); // fila 1: subtítulo
+      wsData.push([null]); // fila 2: metadatos
+      wsData.push([null]); // fila 3: vacía separadora
+      wsMerges.push({s:{r:0,c:0},e:{r:0,c:totalCols-1}});
+      wsMerges.push({s:{r:1,c:0},e:{r:1,c:totalCols-1}});
+      wsMerges.push({s:{r:2,c:0},e:{r:2,c:totalCols-1}});
+
+      const ws=XLSX.utils.aoa_to_sheet(wsData);
+
+      // Asignar valores y estilos de cabecera institucional
+      sc(ws,XLSX.utils.encode_cell({r:0,c:0}),'POLICÍA NACIONAL DEL PERÚ  ·  REGIÓN POLICIAL AMAZONAS',STY.instTitle);
+      sc(ws,XLSX.utils.encode_cell({r:1,c:0}),
+        `CONSOLIDADO ESTADÍSTICO OPERACIONAL  ·  ${periodLbl.toUpperCase()}${esComp?' vs '+periodLblComp.toUpperCase():''}`,STY.instSub);
+      sc(ws,XLSX.utils.encode_cell({r:2,c:0}),
+        `${modoLbl}  |  ${esComp?'COMPARATIVO: '+yr+' vs '+yrComp:'Año: '+yr}  |  Generado: ${ts}  |  ${items.length} indicadores · ${units.length} unidades`,
+        STY.instMeta);
+
+      // ── CABECERA DE COLUMNAS ──
+      let hdrR=4; // fila de cabecera principal
+      let hdrR2=esComp?5:-1; // fila sub-cabecera (solo comparativo)
+      let dataStartR=esComp?6:5;
+
+      if(!esComp){
+        // Modo simple: INDICADORES | unidades | TOTAL
+        const cols=[...units,'TOTAL'];
+        sc(ws,XLSX.utils.encode_cell({r:hdrR,c:0}),'INDICADORES / UNIDADES',STY.colHdr);
+        cols.forEach((u,ci)=>{
+          sc(ws,XLSX.utils.encode_cell({r:hdrR,c:ci+1}),shortN(u),STY.colHdr);
+        });
+        // Datos
+        items.forEach((item,ri)=>{
+          const alt=ri%2===1;
+          const row=result[item]||{};
+          sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:0}),item,alt?STY.indAlt:STY.indNormal);
+          cols.forEach((u,ci)=>{
+            const v=row[u]||0;
+            const isTotal=u==='TOTAL';
+            let sty;
+            if(isTotal) sty=alt?STY.valTotalAlt:STY.valTotal;
+            else if(v===0) sty=alt?STY.valZeroAlt:STY.valZero;
+            else sty=alt?STY.valAlt:STY.valNormal;
+            const numV=isKgInd(item)?parseFloat(v.toFixed(3)):v;
+            sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:ci+1}),numV,sty,isKgInd(item)?'0.000':'#,##0');
+          });
+        });
+        // Fila TOTALES GENERALES
+        const totR=dataStartR+items.length;
+        sc(ws,XLSX.utils.encode_cell({r:totR,c:0}),'TOTALES GENERALES',STY.totRowLbl);
+        cols.forEach((u,ci)=>{
+          const tot=items.reduce((s,item)=>{
+            const v=result[item][u]||0;
+            return s+(isKgInd(item)?parseFloat(v.toFixed(3)):v);
+          },0);
+          sc(ws,XLSX.utils.encode_cell({r:totR,c:ci+1}),
+            isKgInd('_')?parseFloat(tot.toFixed(3)):Math.round(tot),
+            STY.totRow,'#,##0');
+        });
+        // Anchos de columna
+        ws['!cols']=[{wch:36},...cols.map((u,i)=>({wch:i===cols.length-1?14:Math.max(shortN(u).length+4,12)}))];
+
+      } else {
+        // Modo comparativo: INDICADORES | (Unidad: año_p, año_c, diff) x N unidades
+        // Cabecera fila 1: INDICADORES + colspan por unidad
+        sc(ws,XLSX.utils.encode_cell({r:hdrR,c:0}),'INDICADORES / UNIDADES',STY.colHdr);
+        wsMerges.push({s:{r:hdrR,c:0},e:{r:hdrR2,c:0}}); // indicadores rowspan 2
+        units.forEach((u,ui)=>{
+          const colBase=1+ui*3;
+          sc(ws,XLSX.utils.encode_cell({r:hdrR,c:colBase}),shortN(u),STY.colHdr);
+          wsMerges.push({s:{r:hdrR,c:colBase},e:{r:hdrR,c:colBase+2}});
+        });
+        // Cabecera fila 2: año principal / año comparativo / diferencia por cada unidad
+        units.forEach((u,ui)=>{
+          const colBase=1+ui*3;
+          sc(ws,XLSX.utils.encode_cell({r:hdrR2,c:colBase}),periodLbl,STY.colHdrPrin);
+          sc(ws,XLSX.utils.encode_cell({r:hdrR2,c:colBase+1}),periodLblComp||yrComp,STY.colHdrComp);
+          sc(ws,XLSX.utils.encode_cell({r:hdrR2,c:colBase+2}),'DIFERENCIA',STY.colHdrDiff);
+        });
+        // Datos comparativos
+        items.forEach((item,ri)=>{
+          const alt=ri%2===1;
+          const row=result[item]||{};
+          const rowC=resultComp[item]||{};
+          sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:0}),item,alt?STY.indAlt:STY.indNormal);
+          units.forEach((u,ui)=>{
+            const colBase=1+ui*3;
+            const v=row[u]||0;
+            const vc=rowC[u]||0;
+            const diff=v-vc;
+            const numV=isKgInd(item)?parseFloat(v.toFixed(3)):v;
+            const numVc=isKgInd(item)?parseFloat(vc.toFixed(3)):vc;
+            const numDiff=isKgInd(item)?parseFloat(diff.toFixed(3)):diff;
+            const numFmt=isKgInd(item)?'0.000':'#,##0';
+            const numFmtD=isKgInd(item)?'+0.000;-0.000;0.000':'+#,##0;-#,##0;0';
+            // Valor año principal
+            sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:colBase}),numV,v===0?(alt?STY.valZeroAlt:STY.valZero):(alt?STY.valAlt:STY.valNormal),numFmt);
+            // Valor año comparativo
+            sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:colBase+1}),numVc,vc===0?(alt?STY.valZeroAlt:STY.valZero):(alt?STY.valAlt:STY.valNormal),numFmt);
+            // Diferencia
+            let diffSty;
+            if(diff>0) diffSty=alt?STY.diffPosAlt:STY.diffPos;
+            else if(diff<0) diffSty=alt?STY.diffNegAlt:STY.diffNeg;
+            else diffSty=alt?STY.valZeroAlt:STY.valZero;
+            sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:colBase+2}),numDiff,diffSty,numFmtD);
+          });
+        });
+        // Fila TOTALES comparativo
+        const totR=dataStartR+items.length;
+        sc(ws,XLSX.utils.encode_cell({r:totR,c:0}),'TOTALES GENERALES',STY.totRowLbl);
+        units.forEach((u,ui)=>{
+          const colBase=1+ui*3;
+          const totV=items.reduce((s,item)=>s+(result[item][u]||0),0);
+          const totVc=items.reduce((s,item)=>s+(resultComp[item][u]||0),0);
+          const totD=totV-totVc;
+          sc(ws,XLSX.utils.encode_cell({r:totR,c:colBase}),Math.round(totV),STY.totRow,'#,##0');
+          sc(ws,XLSX.utils.encode_cell({r:totR,c:colBase+1}),Math.round(totVc),STY.totRow,'#,##0');
+          sc(ws,XLSX.utils.encode_cell({r:totR,c:colBase+2}),Math.round(totD),STY.totRow,'+#,##0;-#,##0;0');
+        });
+        // Anchos de columna
+        ws['!cols']=[{wch:34},...units.flatMap(u=>[{wch:Math.max(shortN(u).length+2,12)},{wch:12},{wch:12}])];
+      }
+
+      // Altura de filas de cabecera
+      ws['!rows']=[{hpt:28},{hpt:20},{hpt:16},{hpt:6},{hpt:22},...(esComp?[{hpt:18}]:[])];
+      ws['!merges']=(ws['!merges']||[]).concat(wsMerges);
+
+      // Calcular rango total de la hoja
+      const lastR=(esComp?6:5)+items.length+1;
+      const lastC=esComp?units.length*3:units.length+1;
+      ws['!ref']=`A1:${XLSX.utils.encode_cell({r:lastR,c:lastC})}`;
+
+      XLSX.utils.book_append_sheet(wb,ws,'CUADRO CONSOLIDADO');
+    }
+
+    // ─── HOJA COMP. AÑOS con formato PNP completo (si hay múltiples años) ───
+    if(availYears.length>=2){
+      const years=[...availYears].sort();
+      const nYears=years.length;
+      // Columnas: INDICADOR | año1 | año2 | ... | VAR año1→año2 | ... | VAR% año1→año2 | ...
+      const nVarCols=nYears-1;
+      const totalColsCmp=1+nYears+nVarCols+nVarCols; // ind + años + varAbs + varPct
+      const wsCmp=XLSX.utils.aoa_to_sheet([[null],[null],[null],[null]]);
+
+      // ── Cabecera institucional (filas 0-2) ──
+      const cmpMerges=[];
+      cmpMerges.push({s:{r:0,c:0},e:{r:0,c:totalColsCmp-1}});
+      cmpMerges.push({s:{r:1,c:0},e:{r:1,c:totalColsCmp-1}});
+      cmpMerges.push({s:{r:2,c:0},e:{r:2,c:totalColsCmp-1}});
+      sc(wsCmp,XLSX.utils.encode_cell({r:0,c:0}),'POLICÍA NACIONAL DEL PERÚ  ·  REGIÓN POLICIAL AMAZONAS',STY.instTitle);
+      sc(wsCmp,XLSX.utils.encode_cell({r:1,c:0}),`COMPARACIÓN ESTADÍSTICA MULTI-AÑO  ·  ${years.join(' / ')}`,STY.instSub);
+      sc(wsCmp,XLSX.utils.encode_cell({r:2,c:0}),`${modoLbl}  |  Generado: ${ts}  |  ${Object.keys(IMAP).length} indicadores`,STY.instMeta);
+
+      // ── Sub-cabeceras de grupo (fila 3): INDICADOR | VALORES POR AÑO | VARIACIÓN ABSOLUTA | VARIACIÓN % ──
+      const grpHdrBase={
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'FFFFFF'}},
+        fill:{fgColor:{rgb:'003B23'}},
+        alignment:{horizontal:'center',vertical:'center',wrapText:true},
+        border:{top:{style:'thin',color:{rgb:'D4AF37'}},bottom:{style:'thin',color:{rgb:'2D3D32'}},left:{style:'medium',color:{rgb:'D4AF37'}},right:{style:'medium',color:{rgb:'D4AF37'}}}
+      };
+      sc(wsCmp,XLSX.utils.encode_cell({r:3,c:0}),'INDICADOR',STY.colHdr);
+      // "VALORES POR AÑO" merge sobre columnas años
+      cmpMerges.push({s:{r:3,c:1},e:{r:3,c:nYears}});
+      sc(wsCmp,XLSX.utils.encode_cell({r:3,c:1}),'VALORES POR AÑO',grpHdrBase);
+      // "VARIACIÓN ABSOLUTA" merge
+      if(nVarCols>0){
+        cmpMerges.push({s:{r:3,c:nYears+1},e:{r:3,c:nYears+nVarCols}});
+        sc(wsCmp,XLSX.utils.encode_cell({r:3,c:nYears+1}),'VARIACIÓN ABSOLUTA',{...grpHdrBase,font:{...grpHdrBase.font,color:{rgb:'24B26B'}}});
+        // "VARIACIÓN %" merge
+        cmpMerges.push({s:{r:3,c:nYears+nVarCols+1},e:{r:3,c:nYears+nVarCols*2}});
+        sc(wsCmp,XLSX.utils.encode_cell({r:3,c:nYears+nVarCols+1}),'VARIACIÓN PORCENTUAL',{...grpHdrBase,font:{...grpHdrBase.font,color:{rgb:'D4AF37'}}});
+      }
+
+      // ── Cabecera detalle (fila 4): nombre de cada columna ──
+      const hdrYrSty={
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'D4AF37'}},
+        fill:{fgColor:{rgb:'005A36'}},
+        alignment:{horizontal:'center',vertical:'center'},
+        border:{top:{style:'thin',color:{rgb:'D4AF37'}},bottom:{style:'thin',color:{rgb:'D4AF37'}},left:{style:'thin',color:{rgb:'2D3D32'}},right:{style:'thin',color:{rgb:'2D3D32'}}}
+      };
+      const hdrVarSty={
+        font:{name:'Arial',sz:8,bold:true,color:{rgb:'24B26B'}},
+        fill:{fgColor:{rgb:'003B23'}},
+        alignment:{horizontal:'center',vertical:'center',wrapText:true},
+        border:{top:{style:'thin',color:{rgb:'2D3D32'}},bottom:{style:'thin',color:{rgb:'D4AF37'}},left:{style:'thin',color:{rgb:'2D3D32'}},right:{style:'thin',color:{rgb:'2D3D32'}}}
+      };
+      const hdrPctSty={
+        font:{name:'Arial',sz:8,bold:true,color:{rgb:'D4AF37'}},
+        fill:{fgColor:{rgb:'003B23'}},
+        alignment:{horizontal:'center',vertical:'center',wrapText:true},
+        border:{top:{style:'thin',color:{rgb:'2D3D32'}},bottom:{style:'thin',color:{rgb:'D4AF37'}},left:{style:'thin',color:{rgb:'2D3D32'}},right:{style:'thin',color:{rgb:'2D3D32'}}}
+      };
+      sc(wsCmp,XLSX.utils.encode_cell({r:4,c:0}),'INDICADORES',STY.colHdr);
+      years.forEach((y,yi)=>sc(wsCmp,XLSX.utils.encode_cell({r:4,c:1+yi}),y,hdrYrSty));
+      years.slice(1).forEach((y,i)=>{
+        sc(wsCmp,XLSX.utils.encode_cell({r:4,c:nYears+1+i}),`${years[i]}→${y}`,hdrVarSty);
+        sc(wsCmp,XLSX.utils.encode_cell({r:4,c:nYears+nVarCols+1+i}),`${years[i]}→${y} (%)`,hdrPctSty);
+      });
+
+      // ── Datos con formato por fila ──
+      const dataR0=5;
+      const allInds=Object.keys(IMAP);
+      // Agrupar indicadores por categoría para separadores visuales
+      const cats=['ops','drog','veh','arm'];
+      const catLabel={'ops':'OPERATIVOS Y CAPTURAS','drog':'DROGAS Y SUSTANCIAS','veh':'VEHÍCULOS','arm':'ARMAS'};
+      const catSepSty={
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'D4AF37'}},
+        fill:{fgColor:{rgb:'002B16'}},
+        alignment:{horizontal:'left',vertical:'center'},
+        border:{top:{style:'thin',color:{rgb:'D4AF37'}},bottom:{style:'thin',color:{rgb:'D4AF37'}},left:{style:'thin',color:{rgb:'D4AF37'}},right:{style:'thin',color:{rgb:'D4AF37'}}}
+      };
+      const catSepValSty={
+        font:{name:'Arial',sz:9,bold:true,color:{rgb:'D4AF37'}},
+        fill:{fgColor:{rgb:'002B16'}},
+        alignment:{horizontal:'center',vertical:'center'},
+        border:{top:{style:'thin',color:{rgb:'D4AF37'}},bottom:{style:'thin',color:{rgb:'D4AF37'}},left:{style:'thin',color:{rgb:'2D3D32'}},right:{style:'thin',color:{rgb:'2D3D32'}}}
+      };
+
+      let curR=dataR0;
+      cats.forEach(cat=>{
+        const catInds=allInds.filter(k=>IMAP[k].cat===cat);
+        if(!catInds.length) return;
+        // Fila separadora de categoría
+        sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:0}),catLabel[cat]||cat.toUpperCase(),catSepSty);
+        cmpMerges.push({s:{r:curR,c:0},e:{r:curR,c:totalColsCmp-1}});
+        curR++;
+
+        catInds.forEach(k=>{
+          const alt=(curR-dataR0)%2===1;
+          const indSty=alt?STY.indAlt:STY.indNormal;
+          sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:0}),k,indSty);
+          const inds=IMAP[k].keys;
+          const vals={};
+          years.forEach(y=>{
+            const rows=WB[y]||[];
+            vals[y]=rows.filter(r=>inds.includes((r['TIPO INDICADOR']||'').trim())).reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0);
+          });
+          // Valores por año
+          years.forEach((y,yi)=>{
+            const v=isKgInd(k)?parseFloat(vals[y].toFixed(3)):vals[y];
+            const sty=vals[y]===0?(alt?STY.valZeroAlt:STY.valZero):(alt?STY.valAlt:STY.valNormal);
+            sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:1+yi}),v,sty,isKgInd(k)?'0.000':'#,##0');
+          });
+          // Variación absoluta y %
+          years.slice(1).forEach((y,i)=>{
+            const vPrev=vals[years[i]];
+            const vCurr=vals[y];
+            const vAbs=isKgInd(k)?parseFloat((vCurr-vPrev).toFixed(3)):vCurr-vPrev;
+            const vPct=vPrev>0?((vCurr-vPrev)/vPrev*100):null;
+            // Estilo variación absoluta
+            let absSty;
+            if(vAbs>0) absSty=alt?STY.diffPosAlt:STY.diffPos;
+            else if(vAbs<0) absSty=alt?STY.diffNegAlt:STY.diffNeg;
+            else absSty=alt?STY.valZeroAlt:STY.valZero;
+            sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:nYears+1+i}),vAbs,absSty,isKgInd(k)?'+0.000;-0.000;0.000':'+#,##0;-#,##0;0');
+            // Estilo variación %
+            const pctStr=vPct!==null?parseFloat(vPct.toFixed(1)):'N/D';
+            let pctSty;
+            if(vPct===null) pctSty=alt?STY.valZeroAlt:STY.valZero;
+            else if(vPct>0) pctSty={...( alt?STY.diffPosAlt:STY.diffPos)};
+            else if(vPct<0) pctSty={...(alt?STY.diffNegAlt:STY.diffNeg)};
+            else pctSty=alt?STY.valZeroAlt:STY.valZero;
+            const pctNumFmt=vPct!==null?'+0.0"%";-0.0"%";"0%"':undefined;
+            sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:nYears+nVarCols+1+i}),
+              vPct!==null?parseFloat(vPct.toFixed(1)):'N/D',pctSty,pctNumFmt);
+          });
+          curR++;
+        });
+      });
+
+      // Fila TOTALES GENERALES (suma de todos los indicadores numéricos por año)
+      sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:0}),'TOTALES GENERALES',STY.totRowLbl);
+      years.forEach((y,yi)=>{
+        const tot=allInds.filter(k=>!isKgInd(k)).reduce((s,k)=>{
+          const rows=WB[y]||[];
+          return s+IMAP[k].keys.reduce((ss,key)=>ss+rows.filter(r=>(r['TIPO INDICADOR']||'').trim()===key).reduce((sss,r)=>sss+(parseFloat(r['CANTIDAD'])||0),0),0);
+        },0);
+        sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:1+yi}),Math.round(tot),STY.totRow,'#,##0');
+      });
+      // Variación totales
+      years.slice(1).forEach((y,i)=>{
+        const tPrev=allInds.filter(k=>!isKgInd(k)).reduce((s,k)=>{const rows=WB[years[i]]||[];return s+IMAP[k].keys.reduce((ss,key)=>ss+rows.filter(r=>(r['TIPO INDICADOR']||'').trim()===key).reduce((sss,r)=>sss+(parseFloat(r['CANTIDAD'])||0),0),0);},0);
+        const tCurr=allInds.filter(k=>!isKgInd(k)).reduce((s,k)=>{const rows=WB[y]||[];return s+IMAP[k].keys.reduce((ss,key)=>ss+rows.filter(r=>(r['TIPO INDICADOR']||'').trim()===key).reduce((sss,r)=>sss+(parseFloat(r['CANTIDAD'])||0),0),0);},0);
+        sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:nYears+1+i}),Math.round(tCurr-tPrev),STY.totRow,'+#,##0;-#,##0;0');
+        const pct=tPrev>0?parseFloat(((tCurr-tPrev)/tPrev*100).toFixed(1)):null;
+        sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:nYears+nVarCols+1+i}),pct!==null?pct:'N/D',STY.totRow,pct!==null?'+0.0"%";-0.0"%";"0%"':undefined);
+      });
+      curR++;
+
+      // Anchos y alturas
+      wsCmp['!cols']=[{wch:36},...years.map(()=>({wch:14})),...years.slice(1).map(()=>({wch:16})),...years.slice(1).map(()=>({wch:14}))];
+      wsCmp['!rows']=[{hpt:26},{hpt:18},{hpt:14},{hpt:20},{hpt:20}];
+      wsCmp['!merges']=(wsCmp['!merges']||[]).concat(cmpMerges);
+      wsCmp['!ref']=`A1:${XLSX.utils.encode_cell({r:curR,c:totalColsCmp-1})}`;
+
+      XLSX.utils.book_append_sheet(wb,wsCmp,'COMP. AÑOS');
+    }
+
+    // Nombre del archivo con periodo y año
+    const fname=`PNP_Amazonas_${yr}_${periodLbl.replace(/[^\w]/g,'_')}${esComp?'_vs_'+yrComp:''}`;
+    XLSX.writeFile(wb,`${fname}.xlsx`,{bookType:'xlsx',compression:true});
+
+    if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
+  }catch(err){
+    alert('Error al generar Excel: '+err.message);
+    console.error(err);
+    const btn2=document.getElementById('btn-excel-rep');
+    if(btn2){btn2.innerHTML='⬇ Excel';btn2.disabled=false;}
+  }
+}
+
+// ──────────────────────────────────────
+//  GUARDAR PDF — SOLO EL CUADRO/TABLA DE LA CONFIGURACIÓN
+// ──────────────────────────────────────
+async function saveReporteTablaPDF(){
+  if(!rData){alert('Genera un reporte primero.');return;}
+  const btn=document.querySelector('#btn-area .btn-pdf');
+  const origTxt=btn?btn.innerHTML:'';
+  if(btn){btn.innerHTML='⏳ Generando PDF...';btn.disabled=true;}
+
+  try{
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+    // ── Construir un elemento temporal SOLO con la tabla/cuadro solicitado ──
+    const now=new Date();
+    const esComp=!!(rData.yrComp&&rData.resultComp);
+    const modoLbl=rData.mode==='division'?'Por Divisiones PNP':'Por Comisarías / Subunidades';
+    const clasificVal=(document.getElementById('exp-class')||{value:'USO INTERNO'}).value||'USO INTERNO';
+
+    // Crear contenedor temporal oculto
+    const tmp=document.createElement('div');
+    tmp.id='tmp-pdf-tabla';
+    tmp.style.cssText='position:fixed;top:-99999px;left:-99999px;width:1200px;background:#0A0F0C;padding:24px;font-family:Barlow Condensed,Arial,sans-serif;';
+
+    // ── Cabecera institucional ──
+    tmp.innerHTML=`
+      <div style="background:linear-gradient(135deg,#002B16,#004D28);border-radius:6px;padding:20px 28px;margin-bottom:18px;border:2px solid #D4AF37;-webkit-print-color-adjust:exact;">
+        <div style="display:flex;align-items:center;gap:18px;">
+          <div style="width:58px;height:58px;flex-shrink:0;background:radial-gradient(circle,#F3DB7A 0%,#997A15 100%);border:2px solid #FFF;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:Barlow Condensed,Arial,sans-serif;font-weight:900;font-size:13px;color:#002B16;">PNP</div>
+          <div style="flex:1;">
+            <div style="font-family:Barlow Condensed,Arial,sans-serif;font-weight:900;font-size:22px;color:#F3DB7A;letter-spacing:.1em;text-transform:uppercase;">POLICÍA NACIONAL DEL PERÚ</div>
+            <div style="font-family:Barlow Condensed,Arial,sans-serif;font-size:13px;color:#E8ECEA;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;">Región Policial Amazonas · Estado Mayor · Estadística Operacional</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-family:Barlow Condensed,Arial,sans-serif;font-size:11px;color:#A3B3AA;letter-spacing:.06em;text-transform:uppercase;">Generado: ${now.toLocaleString('es-PE')}</div>
+            <div style="font-family:Barlow Condensed,Arial,sans-serif;font-size:12px;color:#D4AF37;margin-top:4px;font-weight:800;letter-spacing:.08em;">${clasificVal.toUpperCase()}</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#151D18;border:1px solid #2D3D32;border-top:3px solid #D4AF37;border-radius:4px;padding:12px 20px;margin-bottom:14px;">
+        <div style="font-family:Barlow Condensed,Arial,sans-serif;font-weight:900;font-size:17px;color:#E8ECEA;letter-spacing:.08em;text-transform:uppercase;">
+          CONSOLIDADO ESTADÍSTICO OPERACIONAL &nbsp;·&nbsp; ${rData.periodLbl.toUpperCase()}${esComp?' <span style="color:#D4AF37;">vs</span> '+rData.periodLblComp.toUpperCase():''}
+        </div>
+        <div style="font-size:11px;color:#758A7F;margin-top:5px;font-family:Barlow Condensed,Arial,sans-serif;font-weight:700;letter-spacing:.05em;">
+          ${modoLbl} &nbsp;·&nbsp; ${rData.units.length} unidades &nbsp;·&nbsp; ${Object.keys(rData.result).length} indicadores ${esComp?'&nbsp;·&nbsp; Comparativo '+rData.yr+' vs '+rData.yrComp:''}
+        </div>
+      </div>
+    `;
+
+    // ── Clonar la tabla del reporte ──
+    const tblOrig=document.getElementById('dtbl');
+    if(!tblOrig||!tblOrig.rows.length){throw new Error('No hay tabla generada.');}
+
+    const tblWrap=document.createElement('div');
+    tblWrap.style.cssText='overflow:visible;border:1px solid #2D3D32;border-radius:4px;background:#101612;';
+    const tblClone=tblOrig.cloneNode(true);
+    // Forzar estilos inline en la tabla clonada para que html2canvas los capture
+    tblClone.style.cssText='width:100%;border-collapse:collapse;font-size:10.5px;font-family:Barlow Condensed,Arial,sans-serif;';
+    // Mostrar todas las filas (por si había filtro activo)
+    Array.from(tblClone.querySelectorAll('tr')).forEach(tr=>{tr.style.display='';});
+    // Aplicar estilos inline a th/td usando variables resueltas a colores reales
+    Array.from(tblClone.querySelectorAll('thead th')).forEach(th=>{
+      th.style.cssText='background:#223027;color:#E8ECEA;padding:9px 10px;font-family:Barlow Condensed,Arial,sans-serif;font-weight:800;font-size:10px;text-align:center;white-space:nowrap;border-bottom:2px solid #3B4F42;border-right:1px solid #2D3D32;text-transform:uppercase;letter-spacing:.07em;-webkit-print-color-adjust:exact;';
+    });
+    // Primera th de la cabecera (INDICADORES): alineado a la izquierda
+    const firstTh=tblClone.querySelector('thead th:first-child');
+    if(firstTh) firstTh.style.textAlign='left';
+
+    Array.from(tblClone.querySelectorAll('tbody tr')).forEach((tr,ri)=>{
+      const alt=ri%2===1;
+      const bg=alt?'#101612':'#151D18';
+      Array.from(tr.querySelectorAll('td')).forEach((td,ci)=>{
+        const isTot=td.classList.contains('tot');
+        const isZ=td.classList.contains('z');
+        // Detectar celda de diferencia por color inline (positiva/negativa)
+        const inlineColor=(td.getAttribute('style')||'');
+        const isDiffPos=inlineColor.includes('var(--go)')||inlineColor.includes('#28a745')||inlineColor.includes('28a745');
+        const isDiffNeg=inlineColor.includes('var(--red-diff)')||inlineColor.includes('#dc3545')||inlineColor.includes('dc3545');
+        let color='#A3B3AA';
+        if(ci===0) color='#E8ECEA';
+        else if(isTot) color='#D4AF37';
+        else if(isZ) color='#54665C';
+        else if(isDiffPos) color='#24B26B';
+        else if(isDiffNeg) color='#E6350B';
+        const fw=(ci===0||isTot)?'800':'400';
+        const txtAlign=ci===0?'left':'right';
+        const bgFin=isTot?'#1B261F':bg;
+        td.style.cssText=`padding:7px 10px;border-bottom:1px solid #212E26;border-right:1px solid #212E26;color:${color};font-weight:${fw};text-align:${txtAlign};background:${bgFin};font-family:Barlow Condensed,Arial,sans-serif;font-size:10.5px;white-space:nowrap;-webkit-print-color-adjust:exact;`;
+        // Primera columna sticky → desactivar en el clone
+        if(ci===0) td.style.position='static';
+        // Limpiar clase de color inline para evitar conflictos
+        td.removeAttribute('class');
+      });
+    });
+
+    tblWrap.appendChild(tblClone);
+    tmp.appendChild(tblWrap);
+
+    // Pie de página
+    const footer=document.createElement('div');
+    footer.style.cssText='text-align:center;padding:14px;font-family:Barlow Condensed,Arial,sans-serif;font-size:10px;font-weight:700;color:#54665C;letter-spacing:.12em;text-transform:uppercase;border-top:1px solid #212E26;margin-top:16px;';
+    footer.textContent=`PNP · Región Policial Amazonas · Sistema Estadístico Operacional v4.0 · ${clasificVal}`;
+    tmp.appendChild(footer);
+
+    document.body.appendChild(tmp);
+
+    // ── Renderizar con html2canvas ──
+    const canvas=await html2canvas(tmp,{
+      scale:2,
+      backgroundColor:'#0A0F0C',
+      useCORS:true,
+      logging:false,
+      width:1200,
+      windowWidth:1200,
+      onclone:function(doc){
+        // Asegurar colores en el clon
+        doc.querySelectorAll('th,td').forEach(el=>{
+          el.style.webkitPrintColorAdjust='exact';
+          el.style.printColorAdjust='exact';
+        });
+      }
+    });
+
+    document.body.removeChild(tmp);
+
+    // ── Generar PDF A4 landscape (tabla ancha) o portrait si es simple ──
+    const {jsPDF}=window.jspdf;
+    const esLandscape=rData.units.length>4||esComp;
+    const pdf=new jsPDF({orientation:esLandscape?'landscape':'portrait',unit:'mm',format:'a4'});
+    const pageW=pdf.internal.pageSize.getWidth();
+    const pageH=pdf.internal.pageSize.getHeight();
+    const mg=8;
+    const availW=pageW-mg*2;
+    const availH=pageH-mg*2;
+
+    const imgRatio=canvas.width/canvas.height;
+    const drawW=availW;
+    const drawH=drawW/imgRatio;
+
+    if(drawH<=availH){
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.96),'JPEG',mg,mg,drawW,drawH);
+    } else {
+      // Paginar
+      const pxPerMm=canvas.width/drawW;
+      const pageHeightPx=availH*pxPerMm;
+      let yOff=0;
+      while(yOff<canvas.height){
+        if(yOff>0) pdf.addPage();
+        const sliceH=Math.min(pageHeightPx,canvas.height-yOff);
+        const pageC=document.createElement('canvas');
+        pageC.width=canvas.width;pageC.height=sliceH;
+        const ctx=pageC.getContext('2d');ctx.drawImage(canvas,0,-yOff);
+        const sliceHmm=sliceH/pxPerMm;
+        pdf.addImage(pageC.toDataURL('image/jpeg',0.96),'JPEG',mg,mg,drawW,sliceHmm);
+        yOff+=pageHeightPx;
+      }
+    }
+
+    const per=(rData.periodLbl||'').replace(/[|<>:"\/\\?*\s]+/g,'_').substring(0,40);
+    pdf.save(`Cuadro_REGPOL_Amazonas_${rData.yr}_${per}${esComp?'_vs_'+rData.yrComp:''}.pdf`);
+
+  }catch(err){
+    console.error('Error PDF tabla:',err);
+    alert('Error al generar el PDF: '+err.message+'\nUse Google Chrome.');
+  }finally{
+    if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
+    // Eliminar tmp si aún existe por error
+    const tmp2=document.getElementById('tmp-pdf-tabla');
+    if(tmp2) document.body.removeChild(tmp2);
+  }
+}
 
 // ──────────────────────────────────────
 //  EXPORTAR XLSM
@@ -2129,8 +2802,8 @@ document.getElementById('exp-class').addEventListener('change',function(){docume
 
 // Inicializar
 buildMGrid();
-// Cargar datos automáticamente desde Drive al abrir la página
-loadFromDrive();
+// NOTA: loadFromDrive() se lanza automáticamente desde window.addEventListener('load', ...)
+// junto con la animación del intro, sin necesidad de llamarlo aquí de nuevo.
 </script>
 </body>
 </html>
