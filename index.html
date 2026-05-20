@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Sistema Estadístico · Región Policial Amazonas · v4.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -58,7 +58,7 @@
   --shadow-sm: 0 2px 6px rgba(0,0,0,0.3);
 }
 
-html,body{min-height:100vh;background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;font-size:14px;overflow-x:hidden;}
+html,body{min-height:100vh;background:var(--bg);color:var(--tx);font-family:'Barlow',sans-serif;font-size:14px;overflow-x:hidden;-webkit-tap-highlight-color:transparent;}
 
 /* ━━━━━ INTRO CINEMÁTICA ━━━━━ */
 #intro-overlay {
@@ -442,21 +442,145 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
   #intro-overlay{display:none!important;}
 }
 
-/* Responsive */
+/* ━━━━━ RESPONSIVE ━━━━━ */
+
+/* Tablet (≤1100px) */
 @media(max-width:1100px){
   .dashboard-visual{grid-template-columns:1fr!important;}
   .db-center{order:-1;}
   .g2,.g3,.g4{grid-template-columns:1fr!important;}
   .clock{display:none;}
   .wrap{padding:16px;}
+  .filter-section{flex-wrap:wrap;gap:10px;}
+  .filter-section .f-group{min-width:calc(50% - 8px);max-width:100%;}
+  .filter-section-pdf-row{width:100%;justify-content:flex-start;}
 }
-@media(max-width:600px){
-  .filter-section{grid-template-columns:1fr 1fr!important;}
-  .v-val{font-size:24px!important;}
-  .ops-core{width:260px!important;height:260px!important;}
+
+/* Móvil grande (≤768px) */
+@media(max-width:768px){
+  /* Topbar compacto */
+  .topbar{padding:0 14px;height:54px;gap:10px;}
+  .brand-t{font-size:14px;letter-spacing:.06em;}
+  .brand-s{font-size:9px;}
+  .shield{width:34px;height:34px;font-size:8px;}
+  .sys-badge{padding:5px 10px;}
+  .sys-txt{font-size:10px;}
+
+  /* Nav - scroll horizontal */
+  .nav{padding:0 8px;gap:0;}
+  .ntab{padding:11px 14px;font-size:11px;}
+
+  /* Contenido */
+  .wrap{padding:12px 10px;}
+  .card{padding:14px 12px;}
+  .sh-title{font-size:16px;}
+
+  /* Grids a 1 columna */
+  .g2,.g3,.g4,.gkpi{grid-template-columns:1fr!important;}
+
+  /* Filter section - 1 columna */
+  .filter-section{padding:12px;gap:10px;}
+  .filter-section .f-group,
+  .filter-section .f-group-yr{min-width:100%;max-width:100%;}
+  .filter-section-pdf-row{width:100%;}
+  .btn-pdf{width:100%;justify-content:center;}
+
+  /* Dashboard */
+  .dashboard-visual{
+    grid-template-columns:1fr!important;
+    padding:14px 10px;gap:14px;
+  }
+  .db-center{order:-1;}
+  .ops-core{width:100%!important;max-width:320px;height:280px!important;margin:0 auto;}
+  .ops-val-big{font-size:28px!important;}
+  .v-val{font-size:26px!important;}
+  .v-old{font-size:18px!important;}
+
+  /* DB cards en grid 2 columnas */
+  .db-side{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .db-card{margin-bottom:0;}
+  .db-card-hdr{font-size:10px;padding:8px 10px;}
+  .db-table td{padding:8px 6px;}
+
+  /* Tabla de datos: scroll horizontal */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table.dt{font-size:10.5px;}
+  table.dt thead tr.hdr1 th{padding:8px 8px;font-size:10px;}
+  table.dt tbody td{padding:6px 8px;}
+  table.dt tbody td:first-child{min-width:150px;font-size:10px;}
+
+  /* Rankings */
+  .rb-bg{width:60px;}
+  .rd{font-size:10px;}
+  .rv{font-size:11px;}
+
+  /* Botones */
+  .btn-group{flex-direction:column;gap:8px;}
+  .btn-group .btn{width:100%;justify-content:center;}
+  .btn-lg{padding:13px 20px;}
+
+  /* Month grid */
+  .mgrid{grid-template-columns:repeat(4,1fr)!important;}
+
+  /* Mode toggle */
+  .mode-toggle{width:100%;flex-direction:row;}
+  .mt-btn{flex:1;padding:10px 8px;font-size:11px;}
+
+  /* KPI */
+  .kpi-val{font-size:22px;}
+  .gkpi{grid-template-columns:repeat(2,1fr)!important;}
+}
+
+/* Móvil pequeño (≤480px) */
+@media(max-width:480px){
+  .topbar{height:50px;padding:0 10px;gap:8px;}
+  .brand-t{font-size:13px;}
+  .brand-s{display:none;}
+  .sys-badge{display:none;}
+
+  .ntab{padding:10px 10px;font-size:10px;letter-spacing:.04em;}
+
+  .wrap{padding:10px 8px;}
+  .card{padding:12px 10px;margin-bottom:14px;}
+
+  /* Dashboard tarjetas en 1 columna en pantallas muy chicas */
+  .db-side{grid-template-columns:1fr!important;}
+  .ops-core{height:240px!important;}
+  .ops-main-unit{font-size:16px!important;padding:0 16px;}
+  .ops-title-big{font-size:13px!important;letter-spacing:.15em;}
   .ops-val-big{font-size:24px!important;}
-  .intro-title { font-size: 20px; }
-  .intro-subtitle { font-size: 13px; }
+  .ops-stats-ring{padding:10px 0;}
+  .v-val{font-size:22px!important;}
+
+  /* Tabla - font más chico */
+  table.dt{font-size:9.5px;}
+  table.dt tbody td:first-child{min-width:120px;}
+
+  /* Intro */
+  .intro-title{font-size:17px;letter-spacing:.15em;}
+  .intro-subtitle{font-size:12px;}
+  .intro-shield{width:72px;height:72px;font-size:20px;}
+
+  /* KPIs en 2 columnas */
+  .gkpi{grid-template-columns:repeat(2,1fr)!important;}
+  .kpi-val{font-size:20px;}
+  .kpi-lbl{font-size:9px;}
+
+  /* Month grid */
+  .mgrid{grid-template-columns:repeat(3,1fr)!important;}
+
+  /* Pills más compactas */
+  .pill,.yc{padding:5px 9px;font-size:9px;}
+
+  /* Year chips */
+  .yr-chips{gap:6px;}
+
+  /* Export header */
+  .exp-hdr{flex-direction:column;gap:10px;padding:12px 14px;}
+  .exp-title{font-size:13px;}
+
+  /* Status */
+  .status{font-size:11px;padding:10px 12px;}
 }
 </style>
 </head>
