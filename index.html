@@ -334,8 +334,9 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
   padding:20px 24px;margin-bottom:20px;
   display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;
 }
-.filter-section .f-group{flex:1;min-width:140px;max-width:220px;}
+.filter-section .f-group{flex:1;min-width:140px;max-width:240px;}
 .filter-section .f-group-yr{flex:0 0 120px;min-width:120px;max-width:120px;}
+.filter-section .f-group-wide{flex:1.5;min-width:280px;max-width:340px;}
 .filter-section-pdf-row{display:flex;align-items:flex-end;flex-shrink:0;margin-left:auto;}
 
 .dashboard-visual{
@@ -354,8 +355,13 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 
 .db-card{
   background:var(--bg2);
-  border:1px solid var(--bd);border-radius:4px;overflow:hidden;
-  margin-bottom:14px;box-shadow:var(--shadow-sm);
+  border:1px solid rgba(0, 77, 40, 0.4);border-radius:4px;overflow:hidden;
+  margin-bottom:14px;box-shadow: 0 0 15px rgba(0, 77, 40, 0.3);
+  transition: all 0.3s ease;
+}
+.db-card:hover{
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.25);
+  border-color: rgba(212, 175, 55, 0.5);
 }
 .db-card:last-child{margin-bottom:0;}
 .db-card-hdr{
@@ -391,44 +397,68 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
   display:flex;flex-direction:column;align-items:center;
   justify-content:flex-start;padding:10px;gap:20px;
 }
-/* Núcleo Estilo Radar Metálico/Formal */
+/* Núcleo Estilo Radar Metálico/Formal - MODIFICADO CINEMÁTICO */
 .ops-core{
   position:relative;width:320px;height:320px;border-radius:50%;
-  background:var(--bg2);
-  border:4px solid var(--bd2);
+  background:radial-gradient(circle at center, #0B110D 0%, #050806 100%);
+  border:2px solid var(--bd3);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.6);
+  box-shadow: 0 0 20px rgba(0, 77, 40, 0.4), inset 0 0 50px rgba(0,0,0,0.9);
   overflow:hidden;flex-shrink:0;
+  animation: corePulse 4s infinite alternate ease-in-out;
 }
 .ops-core::before{
-  content:'';position:absolute;top:4px;left:4px;right:4px;bottom:4px;
-  border-radius:50%;border:1px dashed var(--tx4);opacity:.5;
+  content:'';position:absolute;top:6px;left:6px;right:6px;bottom:6px;
+  border-radius:50%;border:2px dashed rgba(212, 175, 55, 0.25);
+  animation: spinRight 40s linear infinite; pointer-events:none; z-index:1;
+}
+.ops-core::after{
+  content:'';position:absolute;top:16px;left:16px;right:16px;bottom:16px;
+  border-radius:50%;border:1px solid rgba(0, 90, 54, 0.5);
+  box-shadow: inset 0 0 20px rgba(0, 90, 54, 0.2), 0 0 15px rgba(0, 90, 54, 0.3);
+  animation: spinLeft 25s linear infinite; pointer-events:none; z-index:1;
 }
 .ops-main-unit{
   font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;
   color:var(--gold);line-height:1.2;text-align:center;padding:0 30px;
-  text-transform:uppercase;margin-bottom:12px;z-index:2;
+  text-transform:uppercase;margin-bottom:12px;z-index:3;
+  text-shadow: 0 0 15px rgba(212,175,55,0.6);
 }
 .ops-stats-ring{
-  text-align:center;border-top:1px solid var(--bd2);
-  border-bottom:1px solid var(--bd2);
-  padding:16px 0;width:85%;z-index:2;
+  text-align:center;border-top:1px solid rgba(212,175,55,0.3);
+  border-bottom:1px solid rgba(212,175,55,0.3);
+  padding:16px 0;width:85%;z-index:3;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(2px);
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 .ops-title-big{
   font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;
   color:var(--tx2);letter-spacing:.25em;margin-bottom:12px;
+  text-shadow: 0 0 10px rgba(255,255,255,0.2);
 }
 .ops-comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.ops-val-big{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:34px;color:var(--tx);}
-.ops-source{font-size:10px;color:var(--tx4);text-align:center;text-transform:uppercase;letter-spacing:.1em;z-index:2;margin-top:12px;font-weight:700;}
+.ops-val-big{
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:34px;
+  color:var(--tx); text-shadow: 0 0 15px rgba(255,255,255,0.4);
+}
+#v-ops-c { text-shadow: 0 0 20px rgba(212,175,55,0.8); }
+.ops-source{font-size:10px;color:var(--tx4);text-align:center;text-transform:uppercase;letter-spacing:.1em;z-index:3;margin-top:12px;font-weight:700;}
+
+@keyframes spinRight { 100% { transform: rotate(360deg); } }
+@keyframes spinLeft { 100% { transform: rotate(-360deg); } }
+@keyframes corePulse { 
+  0% { box-shadow: 0 0 20px rgba(0, 77, 40, 0.2), inset 0 0 40px rgba(0,0,0,0.9); } 
+  100% { box-shadow: 0 0 45px rgba(212, 175, 55, 0.25), inset 0 0 60px rgba(0,0,0,0.9); border-color: rgba(212,175,55,0.4); } 
+}
 
 /* Botón PDF Táctico */
 .btn-pdf{
   background:linear-gradient(180deg, var(--bg4), var(--bg3));color:var(--gold);
-  padding:12px 24px;border-radius:4px;border:1px solid var(--bd3);
-  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:12px;
+  padding:8px 14px;border-radius:4px;border:1px solid var(--bd3);
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:11px;
   text-transform:uppercase;cursor:pointer;letter-spacing:.1em;
-  box-shadow:var(--shadow-sm);display:inline-flex;align-items:center;gap:8px;
+  box-shadow:var(--shadow-sm);display:inline-flex;align-items:center;gap:6px;
 }
 .btn-pdf:hover{background:var(--bg5);color:var(--gold-l);border-color:var(--gold-d);}
 
@@ -452,7 +482,7 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
   .clock{display:none;}
   .wrap{padding:16px;}
   .filter-section{flex-wrap:wrap;gap:10px;}
-  .filter-section .f-group{min-width:calc(50% - 8px);max-width:100%;}
+  .filter-section .f-group, .filter-section .f-group-wide{min-width:calc(50% - 8px);max-width:100%;}
   .filter-section-pdf-row{width:100%;justify-content:flex-start;}
 }
 
@@ -481,7 +511,8 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
   /* Filter section - 1 columna */
   .filter-section{padding:12px;gap:10px;}
   .filter-section .f-group,
-  .filter-section .f-group-yr{min-width:100%;max-width:100%;}
+  .filter-section .f-group-yr,
+  .filter-section .f-group-wide{min-width:100%;max-width:100%;}
   .filter-section-pdf-row{width:100%;}
   .btn-pdf{width:100%;justify-content:center;}
 
@@ -685,15 +716,15 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
     <!-- FILTROS -->
     <div class="filter-section">
       <div class="f-group f-group-yr">
-        <label>Año Principal (actual)</label>
+        <label class="lbl">Año Principal (actual)</label>
         <select id="yr-sel" onchange="updAnalysis()"></select>
       </div>
       <div class="f-group f-group-yr">
-        <label>Año Comparativa</label>
+        <label class="lbl">Año Comparativa</label>
         <select id="yr-comp" onchange="updAnalysis()"></select>
       </div>
       <div class="f-group">
-        <label>Nivel de Detalle</label>
+        <label class="lbl">Nivel de Detalle</label>
         <select id="mode-sel" onchange="handleModeChange()">
           <option value="provincia">Región Amazonas (Total)</option>
           <option value="division">Por Divisiones Policiales</option>
@@ -701,26 +732,26 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
         </select>
       </div>
       <div class="f-group" id="group-units" style="display:none">
-        <label id="unit-label">Seleccionar Unidad</label>
+        <label class="lbl" id="unit-label">Seleccionar Unidad</label>
         <select id="unit-sel" onchange="updAnalysis()"></select>
       </div>
       <div class="f-group">
-        <label>Periodo Temporal</label>
+        <label class="lbl">Periodo Temporal</label>
         <select id="ptype" onchange="toggleDateInputs(); updAnalysis()">
           <option value="full">Año Consolidado</option>
           <option value="months">Rango Mensual</option>
           <option value="days">Rango de Fechas</option>
         </select>
       </div>
-      <div class="f-group" id="group-months" style="display:none">
-        <label>Rango de Meses</label>
+      <div class="f-group f-group-wide" id="group-months" style="display:none">
+        <label class="lbl">Rango de Meses</label>
         <div style="display:flex;gap:5px;">
           <select id="m-from" onchange="updAnalysis()" style="flex:1;"></select>
           <select id="m-to" onchange="updAnalysis()" style="flex:1;"></select>
         </div>
       </div>
-      <div class="f-group" id="group-days" style="display:none">
-        <label>Fechas</label>
+      <div class="f-group f-group-wide" id="group-days" style="display:none">
+        <label class="lbl">Fechas</label>
         <div style="display:flex;gap:5px;">
           <input type="date" id="d-df" onchange="updAnalysis()">
           <input type="date" id="d-dt" onchange="updAnalysis()">
@@ -1420,7 +1451,7 @@ function handleModeChange(){
   if(mode==='provincia'){
     unitGroup.style.display='none';
   } else {
-    unitGroup.style.display='flex';
+    unitGroup.style.display='block';
     unitSel.innerHTML='<option value="all">TODAS</option>';
     if(mode==='division'){
       unitLabel.textContent='Elegir División';
@@ -1443,8 +1474,8 @@ function handleModeChange(){
 
 function toggleDateInputs(){
   const p=document.getElementById('ptype').value;
-  document.getElementById('group-months').style.display=p==='months'?'flex':'none';
-  document.getElementById('group-days').style.display=p==='days'?'flex':'none';
+  document.getElementById('group-months').style.display=p==='months'?'block':'none';
+  document.getElementById('group-days').style.display=p==='days'?'block':'none';
 }
 
 function filterDataDB(yr,ptype){
@@ -1584,104 +1615,37 @@ function renderDashV51(c,p,yC,yP,pt){
 async function saveAsPDF(){
   const btn=document.querySelector('.btn-pdf');
   const origTxt=btn?btn.innerHTML:'';
-  if(btn){btn.innerHTML='⏳ Capturando...';btn.disabled=true;}
-
+  if(btn){btn.innerHTML='⏳ Generando PDF...';btn.disabled=true;}
   try{
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    // Seleccionamos directamente el contenedor visual del dashboard
+    const element = document.querySelector('.dashboard-visual');
+    
+    const yC=(document.getElementById('yr-sel')||{}).value||'—';
+    const periodLbl=((document.getElementById('db-period-lbl')||{}).textContent||'').replace('PERIODO:','').trim();
+    const per=periodLbl.replace(/[|<>:"\/\\?*\s]+/g,'_').substring(0,40);
+    const filename = `Dashboard_REGPOL_Amazonas_${yC}_${per}.pdf`;
 
-    // Capturar SOLO el dashboard-visual (no el wrapper con padding)
-    const target = document.querySelector('.dashboard-visual');
-    if(!target){alert('Dashboard no visible');if(btn){btn.innerHTML=origTxt;btn.disabled=false;}return;}
+    // Opciones para captura fiel de pantalla y escalado a PDF
+    const opt = {
+      margin:       5, // Margen de 5mm alrededor de la imagen capturada
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 1 },
+      html2canvas:  { 
+        scale: 2, // Aumenta la resolución de la captura
+        useCORS: true, 
+        logging: false,
+        backgroundColor: '#0B110D' // Forzar el fondo oscuro pizarra original
+      },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
 
-    // Obtener dimensiones reales del elemento en pantalla
-    const rect = target.getBoundingClientRect();
-    const dpr  = window.devicePixelRatio || 1;
+    // Usamos html2pdf (ya importado en el <head>) para generar el archivo
+    await html2pdf().set(opt).from(element).save();
 
-    const canvas = await html2canvas(target, {
-      scale       : 2,                        // escala fija ×2 para nitidez
-      backgroundColor: '#0A0F0C',             // Aseguramos el color del fondo institucional
-      useCORS     : true,
-      logging     : false,
-      x           : 0,
-      y           : 0,
-      width       : rect.width,              // ancho exacto del elemento
-      height      : rect.height,             // alto exacto del elemento
-      scrollX     : 0,
-      scrollY     : 0,
-      windowWidth : Math.max(rect.width, 1300),
-      onclone     : function(doc){
-        // Asegurar fondo verde oscuro/pizarra y detener animaciones en el clon
-        const dv = doc.querySelector('.dashboard-visual');
-        if(dv){
-          dv.style.cssText += ';background:#0B110D!important;animation:none!important;';
-          // Ancho fijo para que el grid no colapse
-          dv.style.width = rect.width + 'px';
-          dv.style.minWidth = rect.width + 'px';
-        }
-        // Detener rotación del ops-core
-        doc.querySelectorAll('.ops-core').forEach(el=>{
-          el.style.animation='none';
-          el.style.overflow='visible';
-        });
-        // Gradientes visibles
-        doc.querySelectorAll('.db-card-hdr').forEach(el=>{
-          el.style.webkitPrintColorAdjust='exact';
-          el.style.printColorAdjust='exact';
-        });
-      }
-    });
-
-    // A4 landscape: 297 × 210 mm
-    const {jsPDF} = window.jspdf;
-    const pdf  = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
-    const pageW = pdf.internal.pageSize.getWidth();   // 297
-    const pageH = pdf.internal.pageSize.getHeight();  // 210
-    const mg    = 5;  // margen mm
-
-    // Calcular escala para que la imagen llene la página sin recortar
-    const availW = pageW - mg*2;
-    const availH = pageH - mg*2;
-    const imgAspect = canvas.width / canvas.height;   // ratio real del canvas
-    const pageAspect= availW / availH;
-
-    let drawW, drawH;
-    if(imgAspect > pageAspect){
-      // Imagen más ancha → ajustar por ancho
-      drawW = availW;
-      drawH = availW / imgAspect;
-    } else {
-      // Imagen más alta → ajustar por alto
-      drawH = availH;
-      drawW = availH * imgAspect;
-    }
-
-    // Centrar en la página
-    const offX = mg + (availW - drawW) / 2;
-    const offY = mg + (availH - drawH) / 2;
-
-    const imgData = canvas.toDataURL('image/jpeg', 0.97);
-    pdf.addImage(imgData, 'JPEG', offX, offY, drawW, drawH);
-
-    // Nombre de archivo
-    const yC = (document.getElementById('yr-sel')||{}).value||'';
-    const pr  = ((document.getElementById('db-period-lbl')||{}).textContent||'')
-                  .replace('PERIODO:','').replace(/[|<>:"\/\\?*\s]+/g,'_').trim().substring(0,45);
-    pdf.save(`Reporte_REGPOL_Amazonas_${yC}_${pr}.pdf`);
-
-  } catch(err){
-    console.error('PDF error:', err);
-    // Fallback: guardar como PNG
-    try{
-      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-      const t = document.querySelector('.dashboard-visual');
-      const c = await html2canvas(t,{scale:2,backgroundColor:'#0A0F0C',useCORS:true,logging:false});
-      const a = document.createElement('a');
-      a.download='Dashboard_REGPOL_Amazonas.png';
-      a.href = c.toDataURL('image/png');
-      a.click();
-    } catch(e){ alert('Error al exportar. Use Google Chrome.'); }
-  } finally {
+  }catch(err){
+    console.error('PDF Dashboard error:',err);
+    alert('Error al generar el PDF: '+err.message);
+  }finally{
     if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
   }
 }
@@ -1701,131 +1665,6 @@ function loadScript(src){
   });
 }
 
-// ──────────────────────────────────────
-//  GUARDAR PDF DEL REPORTE
-// ──────────────────────────────────────
-async function saveReportePDF(){
-  if(!rData){alert('Genera un reporte primero.');return;}
-  const btn=document.querySelector('#btn-area .btn-pdf');
-  const origTxt=btn?btn.innerHTML:'';
-  if(btn){btn.innerHTML='⏳ Generando PDF...';btn.disabled=true;}
-
-  try{
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-
-    // Mostrar cabecera institucional para el PDF
-    const hdr=document.getElementById('rep-inst-header');
-    const fechaEl=document.getElementById('rep-fecha-gen');
-    const clasificEl=document.getElementById('rep-clasif-lbl');
-    const now=new Date();
-    if(fechaEl) fechaEl.textContent='Generado: '+now.toLocaleString('es-PE');
-    const expClass=document.getElementById('exp-class');
-    if(clasificEl&&expClass) clasificEl.textContent=expClass.value||'USO INTERNO';
-    if(hdr) hdr.style.display='block';
-
-    // Ocultar controles que no van en el PDF
-    document.querySelectorAll('.no-pdf').forEach(el=>el.style.display='none');
-
-    const target=document.getElementById('reporte-pdf-area');
-    const rect=target.getBoundingClientRect();
-
-    const canvas=await html2canvas(target,{
-      scale:2,
-      backgroundColor:'#0A0F0C',
-      useCORS:true,
-      logging:false,
-      width:rect.width,
-      height:rect.height,
-      scrollX:0,
-      scrollY:-window.scrollY,
-      windowWidth:Math.max(rect.width,1200),
-      onclone:function(doc){
-        // Asegurar visibilidad correcta en el clon
-        const h=doc.getElementById('rep-inst-header');
-        if(h) h.style.display='block';
-        doc.querySelectorAll('.no-pdf').forEach(el=>el.style.display='none');
-        // Forzar colores en tablas y encabezados
-        doc.querySelectorAll('.sh-ico').forEach(el=>{
-          el.style.cssText+=';-webkit-print-color-adjust:exact;print-color-adjust:exact;';
-        });
-        doc.querySelectorAll('table.dt thead tr.hdr1 th').forEach(el=>{
-          el.style.cssText+=';background:#223027!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;';
-        });
-        doc.querySelectorAll('.kpi').forEach(el=>{
-          el.style.cssText+=';background:#101612!important;border:1px solid #212E26!important;';
-        });
-      }
-    });
-
-    // Ocultar cabecera y restaurar controles
-    if(hdr) hdr.style.display='none';
-    document.querySelectorAll('.no-pdf').forEach(el=>el.style.display='');
-
-    const {jsPDF}=window.jspdf;
-    // Usar A4 portrait para el reporte (más datos verticales)
-    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    const pageW=pdf.internal.pageSize.getWidth();   // 210
-    const pageH=pdf.internal.pageSize.getHeight();  // 297
-    const mg=8;
-    const availW=pageW-mg*2;
-    const availH=pageH-mg*2;
-
-    // Si el contenido es más alto que una página, agregar páginas
-    const imgRatio=canvas.width/canvas.height;
-    const pageRatio=availW/availH;
-    const drawW=availW;
-    const drawH=drawW/imgRatio;
-
-    if(drawH<=availH){
-      // Cabe en una página
-      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',mg,mg,drawW,drawH);
-    } else {
-      // Dividir en múltiples páginas
-      const pxPerMm=canvas.width/drawW;
-      const pageHeightPx=availH*pxPerMm;
-      let yOffset=0;
-      while(yOffset<canvas.height){
-        if(yOffset>0) pdf.addPage();
-        const sliceH=Math.min(pageHeightPx,canvas.height-yOffset);
-        // Crear canvas recortado para esta página
-        const pageCanvas=document.createElement('canvas');
-        pageCanvas.width=canvas.width;
-        pageCanvas.height=sliceH;
-        const ctx=pageCanvas.getContext('2d');
-        ctx.drawImage(canvas,0,-yOffset);
-        const sliceH_mm=sliceH/pxPerMm;
-        pdf.addImage(pageCanvas.toDataURL('image/jpeg',0.95),'JPEG',mg,mg,drawW,sliceH_mm);
-        yOffset+=pageHeightPx;
-      }
-    }
-
-    const yr=rData?rData.yr:'';
-    const per=(rData?rData.periodLbl:'').replace(/[|<>:"\/\\?*\s]+/g,'_').substring(0,40);
-    pdf.save(`Reporte_REGPOL_Amazonas_${yr}_${per}.pdf`);
-
-  } catch(err){
-    console.error('Error PDF reporte:',err);
-    // Fallback PNG
-    try{
-      const t=document.getElementById('reporte-pdf-area');
-      const c=await html2canvas(t,{scale:2,backgroundColor:'#0A0F0C',useCORS:true,logging:false});
-      const a=document.createElement('a');
-      a.download='Reporte_REGPOL_Amazonas.png';
-      a.href=c.toDataURL('image/png');
-      a.click();
-    } catch(e){ alert('Error al exportar. Use Google Chrome.'); }
-    const hdr=document.getElementById('rep-inst-header');
-    if(hdr) hdr.style.display='none';
-    document.querySelectorAll('.no-pdf').forEach(el=>el.style.display='');
-  } finally {
-    if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
-  }
-}
-
-// ──────────────────────────────────────
-//  RENDER DASHBOARD — estilo imagen referencia
-// ──────────────────────────────────────
 // ──────────────────────────────────────
 //  MODO
 // ──────────────────────────────────────
@@ -2668,258 +2507,6 @@ function dlExcelReporte(){
     const btn2=document.getElementById('btn-excel-rep');
     if(btn2){btn2.innerHTML='⬇ Excel';btn2.disabled=false;}
   }
-}
-
-// ──────────────────────────────────────
-//  GUARDAR PDF — SOLO EL CUADRO/TABLA DE LA CONFIGURACIÓN
-// ──────────────────────────────────────
-async function saveReporteTablaPDF(){
-  if(!rData){alert('Genera un reporte primero.');return;}
-  const btn=document.querySelector('#btn-area .btn-pdf');
-  const origTxt=btn?btn.innerHTML:'';
-  if(btn){btn.innerHTML='⏳ Generando PDF...';btn.disabled=true;}
-
-  try{
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-
-    // ── Construir un elemento temporal SOLO con la tabla/cuadro solicitado ──
-    const now=new Date();
-    const esComp=!!(rData.yrComp&&rData.resultComp);
-    const modoLbl=rData.mode==='division'?'Por Divisiones PNP':'Por Comisarías / Subunidades';
-    const clasificVal=(document.getElementById('exp-class')||{value:'USO INTERNO'}).value||'USO INTERNO';
-
-    // Crear contenedor temporal oculto
-    const tmp=document.createElement('div');
-    tmp.id='tmp-pdf-tabla';
-    tmp.style.cssText='position:fixed;top:-99999px;left:-99999px;width:1200px;background:#0A0F0C;padding:24px;font-family:Barlow Condensed,Arial,sans-serif;';
-
-    // ── Cabecera institucional ──
-    tmp.innerHTML=`
-      <div style="background:linear-gradient(135deg,#002B16,#004D28);border-radius:6px;padding:20px 28px;margin-bottom:18px;border:2px solid #D4AF37;-webkit-print-color-adjust:exact;">
-        <div style="display:flex;align-items:center;gap:18px;">
-          <div style="width:58px;height:58px;flex-shrink:0;background:radial-gradient(circle,#F3DB7A 0%,#997A15 100%);border:2px solid #FFF;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:Barlow Condensed,Arial,sans-serif;font-weight:900;font-size:13px;color:#002B16;">PNP</div>
-          <div style="flex:1;">
-            <div style="font-family:Barlow Condensed,Arial,sans-serif;font-weight:900;font-size:22px;color:#F3DB7A;letter-spacing:.1em;text-transform:uppercase;">POLICÍA NACIONAL DEL PERÚ</div>
-            <div style="font-family:Barlow Condensed,Arial,sans-serif;font-size:13px;color:#E8ECEA;letter-spacing:.06em;text-transform:uppercase;margin-top:2px;">Región Policial Amazonas · Estado Mayor · Estadística Operacional</div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;">
-            <div style="font-family:Barlow Condensed,Arial,sans-serif;font-size:11px;color:#A3B3AA;letter-spacing:.06em;text-transform:uppercase;">Generado: ${now.toLocaleString('es-PE')}</div>
-            <div style="font-family:Barlow Condensed,Arial,sans-serif;font-size:12px;color:#D4AF37;margin-top:4px;font-weight:800;letter-spacing:.08em;">${clasificVal.toUpperCase()}</div>
-          </div>
-        </div>
-      </div>
-      <div style="background:#151D18;border:1px solid #2D3D32;border-top:3px solid #D4AF37;border-radius:4px;padding:12px 20px;margin-bottom:14px;">
-        <div style="font-family:Barlow Condensed,Arial,sans-serif;font-weight:900;font-size:17px;color:#E8ECEA;letter-spacing:.08em;text-transform:uppercase;">
-          CONSOLIDADO ESTADÍSTICO OPERACIONAL &nbsp;·&nbsp; ${rData.periodLbl.toUpperCase()}${esComp?' <span style="color:#D4AF37;">vs</span> '+rData.periodLblComp.toUpperCase():''}
-        </div>
-        <div style="font-size:11px;color:#758A7F;margin-top:5px;font-family:Barlow Condensed,Arial,sans-serif;font-weight:700;letter-spacing:.05em;">
-          ${modoLbl} &nbsp;·&nbsp; ${rData.units.length} unidades &nbsp;·&nbsp; ${Object.keys(rData.result).length} indicadores ${esComp?'&nbsp;·&nbsp; Comparativo '+rData.yr+' vs '+rData.yrComp:''}
-        </div>
-      </div>
-    `;
-
-    // ── Clonar la tabla del reporte ──
-    const tblOrig=document.getElementById('dtbl');
-    if(!tblOrig||!tblOrig.rows.length){throw new Error('No hay tabla generada.');}
-
-    const tblWrap=document.createElement('div');
-    tblWrap.style.cssText='overflow:visible;border:1px solid #2D3D32;border-radius:4px;background:#101612;';
-    const tblClone=tblOrig.cloneNode(true);
-    // Forzar estilos inline en la tabla clonada para que html2canvas los capture
-    tblClone.style.cssText='width:100%;border-collapse:collapse;font-size:10.5px;font-family:Barlow Condensed,Arial,sans-serif;';
-    // Mostrar todas las filas (por si había filtro activo)
-    Array.from(tblClone.querySelectorAll('tr')).forEach(tr=>{tr.style.display='';});
-    // Aplicar estilos inline a th/td usando variables resueltas a colores reales
-    Array.from(tblClone.querySelectorAll('thead th')).forEach(th=>{
-      th.style.cssText='background:#223027;color:#E8ECEA;padding:9px 10px;font-family:Barlow Condensed,Arial,sans-serif;font-weight:800;font-size:10px;text-align:center;white-space:nowrap;border-bottom:2px solid #3B4F42;border-right:1px solid #2D3D32;text-transform:uppercase;letter-spacing:.07em;-webkit-print-color-adjust:exact;';
-    });
-    // Primera th de la cabecera (INDICADORES): alineado a la izquierda
-    const firstTh=tblClone.querySelector('thead th:first-child');
-    if(firstTh) firstTh.style.textAlign='left';
-
-    Array.from(tblClone.querySelectorAll('tbody tr')).forEach((tr,ri)=>{
-      const alt=ri%2===1;
-      const bg=alt?'#101612':'#151D18';
-      Array.from(tr.querySelectorAll('td')).forEach((td,ci)=>{
-        const isTot=td.classList.contains('tot');
-        const isZ=td.classList.contains('z');
-        // Detectar celda de diferencia por color inline (positiva/negativa)
-        const inlineColor=(td.getAttribute('style')||'');
-        const isDiffPos=inlineColor.includes('var(--go)')||inlineColor.includes('#28a745')||inlineColor.includes('28a745');
-        const isDiffNeg=inlineColor.includes('var(--red-diff)')||inlineColor.includes('#dc3545')||inlineColor.includes('dc3545');
-        let color='#A3B3AA';
-        if(ci===0) color='#E8ECEA';
-        else if(isTot) color='#D4AF37';
-        else if(isZ) color='#54665C';
-        else if(isDiffPos) color='#24B26B';
-        else if(isDiffNeg) color='#E6350B';
-        const fw=(ci===0||isTot)?'800':'400';
-        const txtAlign=ci===0?'left':'right';
-        const bgFin=isTot?'#1B261F':bg;
-        td.style.cssText=`padding:7px 10px;border-bottom:1px solid #212E26;border-right:1px solid #212E26;color:${color};font-weight:${fw};text-align:${txtAlign};background:${bgFin};font-family:Barlow Condensed,Arial,sans-serif;font-size:10.5px;white-space:nowrap;-webkit-print-color-adjust:exact;`;
-        // Primera columna sticky → desactivar en el clone
-        if(ci===0) td.style.position='static';
-        // Limpiar clase de color inline para evitar conflictos
-        td.removeAttribute('class');
-      });
-    });
-
-    tblWrap.appendChild(tblClone);
-    tmp.appendChild(tblWrap);
-
-    // Pie de página
-    const footer=document.createElement('div');
-    footer.style.cssText='text-align:center;padding:14px;font-family:Barlow Condensed,Arial,sans-serif;font-size:10px;font-weight:700;color:#54665C;letter-spacing:.12em;text-transform:uppercase;border-top:1px solid #212E26;margin-top:16px;';
-    footer.textContent=`PNP · Región Policial Amazonas · Sistema Estadístico Operacional v4.0 · ${clasificVal}`;
-    tmp.appendChild(footer);
-
-    document.body.appendChild(tmp);
-
-    // ── Renderizar con html2canvas ──
-    const canvas=await html2canvas(tmp,{
-      scale:2,
-      backgroundColor:'#0A0F0C',
-      useCORS:true,
-      logging:false,
-      width:1200,
-      windowWidth:1200,
-      onclone:function(doc){
-        // Asegurar colores en el clon
-        doc.querySelectorAll('th,td').forEach(el=>{
-          el.style.webkitPrintColorAdjust='exact';
-          el.style.printColorAdjust='exact';
-        });
-      }
-    });
-
-    document.body.removeChild(tmp);
-
-    // ── Generar PDF A4 landscape (tabla ancha) o portrait si es simple ──
-    const {jsPDF}=window.jspdf;
-    const esLandscape=rData.units.length>4||esComp;
-    const pdf=new jsPDF({orientation:esLandscape?'landscape':'portrait',unit:'mm',format:'a4'});
-    const pageW=pdf.internal.pageSize.getWidth();
-    const pageH=pdf.internal.pageSize.getHeight();
-    const mg=8;
-    const availW=pageW-mg*2;
-    const availH=pageH-mg*2;
-
-    const imgRatio=canvas.width/canvas.height;
-    const drawW=availW;
-    const drawH=drawW/imgRatio;
-
-    if(drawH<=availH){
-      pdf.addImage(canvas.toDataURL('image/jpeg',0.96),'JPEG',mg,mg,drawW,drawH);
-    } else {
-      // Paginar
-      const pxPerMm=canvas.width/drawW;
-      const pageHeightPx=availH*pxPerMm;
-      let yOff=0;
-      while(yOff<canvas.height){
-        if(yOff>0) pdf.addPage();
-        const sliceH=Math.min(pageHeightPx,canvas.height-yOff);
-        const pageC=document.createElement('canvas');
-        pageC.width=canvas.width;pageC.height=sliceH;
-        const ctx=pageC.getContext('2d');ctx.drawImage(canvas,0,-yOff);
-        const sliceHmm=sliceH/pxPerMm;
-        pdf.addImage(pageC.toDataURL('image/jpeg',0.96),'JPEG',mg,mg,drawW,sliceHmm);
-        yOff+=pageHeightPx;
-      }
-    }
-
-    const per=(rData.periodLbl||'').replace(/[|<>:"\/\\?*\s]+/g,'_').substring(0,40);
-    pdf.save(`Cuadro_REGPOL_Amazonas_${rData.yr}_${per}${esComp?'_vs_'+rData.yrComp:''}.pdf`);
-
-  }catch(err){
-    console.error('Error PDF tabla:',err);
-    alert('Error al generar el PDF: '+err.message+'\nUse Google Chrome.');
-  }finally{
-    if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
-    // Eliminar tmp si aún existe por error
-    const tmp2=document.getElementById('tmp-pdf-tabla');
-    if(tmp2) document.body.removeChild(tmp2);
-  }
-}
-
-// ──────────────────────────────────────
-//  EXPORTAR XLSM
-// ──────────────────────────────────────
-function exportXLSX(){
-  if(!rData){setSt('st-exp','st-err','Genera un reporte primero.');return;}
-  setSt('st-exp','st-info','<span class="spin"></span> Generando archivo Excel...');
-  try{
-    const{result,units,periodLbl,yr,mode,ts}=rData;
-    const fname=(document.getElementById('exp-fname').value||'Consolidado_PNP_Amazonas').replace(/[^\w\s\-]/g,'');
-    const classif=document.getElementById('exp-class').value;
-    const items=Object.keys(result);
-    const cols=[...units,'TOTAL'];
-    const wb=XLSX.utils.book_new();
-    // Hoja DATOS
-    {
-      const ws_data=[];
-      ws_data.push(['POLICÍA NACIONAL DEL PERÚ']);ws_data.push(['REGIÓN POLICIAL AMAZONAS - ESTADO MAYOR']);
-      ws_data.push([`CONSOLIDADO ESTADÍSTICO OPERACIONAL - ${periodLbl.toUpperCase()}`]);
-      ws_data.push([`Modo: ${mode==='division'?'Por Divisiones':'Por Comisarías'} | Clasificación: ${classif} | Generado: ${ts}`]);
-      ws_data.push([]);ws_data.push(['INDICADORES',...cols.map(u=>shortN(u))]);
-      items.forEach(item=>{ws_data.push([item,...cols.map(u=>{const v=result[item][u]||0;return isKgInd(item)?parseFloat(v.toFixed(3)):v;})]);});
-      ws_data.push([]);
-      ws_data.push(['TOTALES GENERALES',...cols.map((u,ci)=>({f:`SUM(${XLSX.utils.encode_cell({r:6,c:ci+1})}:${XLSX.utils.encode_cell({r:5+items.length,c:ci+1})})`}))]);
-      const ws=XLSX.utils.aoa_to_sheet(ws_data);
-      ws['!cols']=[{wch:34},...cols.map(()=>({wch:18}))];
-      ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:cols.length}},{s:{r:1,c:0},e:{r:1,c:cols.length}},{s:{r:2,c:0},e:{r:2,c:cols.length}},{s:{r:3,c:0},e:{r:3,c:cols.length}}];
-      XLSX.utils.book_append_sheet(wb,ws,'DATOS');
-    }
-    // Hoja ANÁLISIS
-    {
-      const ws_data=[];
-      ws_data.push(['HOJA DE ANÁLISIS ESTADÍSTICO']);
-      ws_data.push([`Periodo: ${periodLbl} | Año: ${yr}`]);ws_data.push([]);
-      ws_data.push(['INDICADOR','TOTAL REGIÓN','MÁXIMO','UNIDAD MÁX.','MÍNIMO','UNIDAD MÍN.','PROMEDIO','UNIDADES CON DATO','% ACTIVAS']);
-      items.forEach(item=>{
-        const vals=units.map(u=>result[item][u]||0);
-        const total=vals.reduce((s,v)=>s+v,0);const mx=Math.max(...vals);
-        const mnV=vals.some(v=>v>0)?Math.min(...vals.filter(v=>v>0)):0;
-        const mxUnit=units[vals.indexOf(mx)];const mnUnit=mnV>0?units[vals.indexOf(mnV)]:'—';
-        const active=vals.filter(v=>v>0).length;const avg=active>0?total/active:0;
-        ws_data.push([item,isKgInd(item)?parseFloat(total.toFixed(3)):total,isKgInd(item)?parseFloat(mx.toFixed(3)):mx,shortN(mxUnit),isKgInd(item)?parseFloat(mnV.toFixed(3)):mnV,shortN(mnUnit),parseFloat(avg.toFixed(1)),active,units.length>0?((active/units.length)*100).toFixed(1)+'%':'0%']);
-      });
-      const ws=XLSX.utils.aoa_to_sheet(ws_data);
-      ws['!cols']=[{wch:36},{wch:14},{wch:12},{wch:24},{wch:12},{wch:24},{wch:12},{wch:18},{wch:14}];
-      XLSX.utils.book_append_sheet(wb,ws,'ANÁLISIS');
-    }
-    // Hoja RANKING
-    {
-      const ws_data=[];ws_data.push(['RANKING DE UNIDADES POR INDICADOR']);ws_data.push([`Periodo: ${periodLbl}`]);ws_data.push([]);
-      const keyInds=['OPERATIVOS','DETENIDOS DELITOS PER.','DETENIDOS RQ','PBC - KG','MARIHUANA - KG','ARMAS DE FUEGO','BANDAS DESARTICULADAS','ORGANIZACIONES CRIMINALES'].filter(k=>result[k]);
-      keyInds.forEach(ind=>{
-        const total=units.reduce((s,u)=>s+(result[ind][u]||0),0);if(total===0)return;
-        ws_data.push([`RANKING: ${ind}`,'','','','']);ws_data.push(['#','UNIDAD','VALOR','% DEL TOTAL','']);
-        const ranked=units.map(u=>({u,v:result[ind][u]||0})).sort((a,b)=>b.v-a.v);
-        ranked.forEach((x,i)=>{const pct=total>0?((x.v/total)*100).toFixed(1)+'%':'0%';ws_data.push([i+1,shortN(x.u),isKgInd(ind)?parseFloat(x.v.toFixed(3)):x.v,pct,i<3?['1°','2°','3°'][i]:'']);});
-        ws_data.push(['TOTAL','',isKgInd(ind)?parseFloat(total.toFixed(3)):total,'100%','']);ws_data.push([]);
-      });
-      const ws=XLSX.utils.aoa_to_sheet(ws_data);ws['!cols']=[{wch:8},{wch:32},{wch:16},{wch:14},{wch:14}];
-      XLSX.utils.book_append_sheet(wb,ws,'RANKING');
-    }
-    // Hoja COMP. AÑOS
-    if(availYears.length>=2){
-      const ws_data=[];ws_data.push(['COMPARACIÓN MULTI-AÑO']);ws_data.push([`Años: ${availYears.join(', ')}`]);ws_data.push([]);
-      const years=availYears.sort();
-      ws_data.push(['INDICADOR',...years,...years.slice(1).map((y,i)=>`VAR ${years[i]}→${y}`),...years.slice(1).map((y,i)=>`VAR% ${years[i]}→${y}`)]);
-      Object.keys(IMAP).forEach(k=>{
-        const inds=IMAP[k].keys;const vals={};
-        years.forEach(yr=>{const rows=WB[yr]||[];vals[yr]=rows.filter(r=>inds.includes((r['TIPO INDICADOR']||'').trim())).reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0);});
-        const varAbs=years.slice(1).map((y,i)=>vals[y]-vals[years[i]]);
-        const varPct=years.slice(1).map((y,i)=>vals[years[i]]>0?((vals[y]-vals[years[i]])/vals[years[i]]*100).toFixed(1)+'%':'N/A');
-        ws_data.push([k,...years.map(y=>isKgInd(k)?parseFloat(vals[y].toFixed(3)):vals[y]),...varAbs,...varPct]);
-      });
-      const ws=XLSX.utils.aoa_to_sheet(ws_data);ws['!cols']=[{wch:32},...years.map(()=>({wch:14})),...years.slice(1).map(()=>({wch:16})),...years.slice(1).map(()=>({wch:14}))];
-      XLSX.utils.book_append_sheet(wb,ws,'COMP. AÑOS');
-    }
-    XLSX.writeFile(wb,`${fname}_${yr}.xlsm`,{bookType:'xlsm',compression:true});
-    setSt('st-exp','st-ok','✓ Generado: '+fname+'_'+yr+'.xlsm');
-  }catch(err){setSt('st-exp','st-err','Error: '+err.message);console.error(err);}
 }
 
 document.getElementById('exp-class').addEventListener('change',function(){document.getElementById('wmk-class').textContent=this.value;});
