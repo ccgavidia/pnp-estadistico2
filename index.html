@@ -875,6 +875,7 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
     <div class="mode-toggle">
       <button class="mt-btn on" id="mode-div" onclick="setMode('division')">🏢 Por Divisiones</button>
       <button class="mt-btn" id="mode-com" onclick="setMode('comisaria')">🏠 Por Comisarías</button>
+      <button class="mt-btn" id="mode-reg" onclick="setMode('region')">🗺️ Por Región</button>
     </div>
     <div id="mode-info" style="font-size:11px;color:var(--tx3);font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:.04em;margin-bottom:14px;"></div>
     <label id="cmp-toggle-label" style="display:inline-flex;align-items:center;gap:10px;cursor:pointer;padding:10px 16px;background:var(--bg3);border:1px solid var(--bd2);border-radius:4px;transition:border-color .2s;">
@@ -1672,8 +1673,10 @@ function setMode(m){
   mode=m;
   document.getElementById('mode-div').classList.toggle('on',m==='division');
   document.getElementById('mode-com').classList.toggle('on',m==='comisaria');
+  document.getElementById('mode-reg').classList.toggle('on',m==='region');
   document.getElementById('mode-info').textContent=m==='division'
-    ?'Agrupando por DIVISION PNP.':'Agrupando por COMISARIA / SUBUNIDAD.';
+    ?'Agrupando por DIVISION PNP.':m==='region'
+    ?'Suma total de todas las divisiones de la Región Policial Amazonas.':'Agrupando por COMISARIA / SUBUNIDAD.';
   if(document.getElementById('yr-main').value) buildUnits();
 }
 
@@ -1686,7 +1689,12 @@ function buildUnits(){
   const yr=document.getElementById('yr-main').value;
   if(!yr||!WB[yr]) return;
   const rows=WB[yr];
-  const units=[...new Set(rows.map(r=>getUnitOfRow(r)).filter(Boolean))].sort();
+  let units;
+  if(mode==='region'){
+    units=['REGIÓN POLICIAL AMAZONAS'];
+  } else {
+    units=[...new Set(rows.map(r=>getUnitOfRow(r)).filter(Boolean))].sort();
+  }
   selUnitsSet=new Set(units);
   const c=document.getElementById('unit-pills');c.innerHTML='';
   units.forEach(u=>{
@@ -1861,11 +1869,18 @@ function calcResult(rows,units){
   indsArr.forEach(lbl=>{
     const keys=IMAP[lbl].keys;
     result[lbl]={};
-    units.forEach(u=>{
-      const val=rows.filter(r=>getUnitOfRow(r)===u&&keys.includes((r['TIPO INDICADOR']||'').trim())).reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0);
-      result[lbl][u]=val;
-    });
-    result[lbl]['TOTAL']=units.reduce((s,u)=>s+(result[lbl][u]||0),0);
+    if(mode==='region'){
+      // Suma total de todas las filas sin filtro de unidad
+      const val=rows.filter(r=>keys.includes((r['TIPO INDICADOR']||'').trim())).reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0);
+      result[lbl]['REGIÓN POLICIAL AMAZONAS']=val;
+      result[lbl]['TOTAL']=val;
+    } else {
+      units.forEach(u=>{
+        const val=rows.filter(r=>getUnitOfRow(r)===u&&keys.includes((r['TIPO INDICADOR']||'').trim())).reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0);
+        result[lbl][u]=val;
+      });
+      result[lbl]['TOTAL']=units.reduce((s,u)=>s+(result[lbl][u]||0),0);
+    }
   });
   return result;
 }
@@ -1878,7 +1893,7 @@ function genReport(){
   const pt=document.getElementById('rep-ptype').value;
   const allRows=WB[yr]||[];
   const units=[...selUnitsSet].sort();
-  let rows=allRows.filter(r=>selUnitsSet.has(getUnitOfRow(r)));
+  let rows=mode==='region'?allRows:allRows.filter(r=>selUnitsSet.has(getUnitOfRow(r)));
   rows=filterByPeriod(rows,pt);
   if(!rows.length){setSt('st-gen','st-err','⚠ Sin registros con los filtros seleccionados.');return;}
   let periodLbl='';
@@ -1891,7 +1906,7 @@ function genReport(){
   let resultComp=null;
   let periodLblComp='';
   if(yrComp && WB[yrComp]){
-    let rowsComp=WB[yrComp].filter(r=>selUnitsSet.has(getUnitOfRow(r)));
+    let rowsComp=mode==='region'?[...WB[yrComp]]:WB[yrComp].filter(r=>selUnitsSet.has(getUnitOfRow(r)));
     // Aplicar mismo periodo al comparativo (meses igual, fechas con df2/dt2 si existen)
     rowsComp=filterByPeriod(rowsComp,pt,true);
     if(pt==='months') periodLblComp=mRange[0]===mRange[1]?`${MNAMES[mRange[0]]} ${yrComp}`:`${MNAMES[mRange[0]]} – ${MNAMES[mRange[1]]} ${yrComp}`;
