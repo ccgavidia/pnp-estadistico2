@@ -254,12 +254,12 @@ table.dt{width:100%;border-collapse:collapse;font-size:11.5px;min-width:600px;}
 table.dt thead tr.hdr1 th{background:var(--bg5);color:var(--tx);padding:10px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:11px;text-align:center;white-space:nowrap;border-bottom:2px solid var(--bd3);}
 table.dt thead tr.hdr1 th:first-child{text-align:left;min-width:200px;border-right:1px solid var(--bd2);}
 table.dt thead tr.hdr2 th{background:var(--bg4);color:var(--tx3);padding:6px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:center;border-bottom:1px solid var(--bd2);}
-table.dt tbody td{padding:8px 12px;border-bottom:1px solid var(--bd);color:var(--tx2);}
+table.dt tbody td{padding:8px 12px;border-bottom:1px solid var(--bd);color:var(--tx);}
 table.dt tbody td:first-child{font-weight:600;background:var(--bg3);color:var(--tx);font-size:11px;position:sticky;left:0;z-index:1;border-right:1px solid var(--bd2);}
 table.dt tbody td:not(:first-child){text-align:right;}
 table.dt tbody tr:hover td{background:var(--bg4);color:var(--tx);}
 table.dt tbody tr:hover td:first-child{background:var(--bg5);}
-table.dt td.z{color:var(--tx4);}
+table.dt td.z{color:var(--tx3);}
 table.dt td.tot{background:var(--bg4)!important;color:var(--gold)!important;font-weight:700;}
 table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 
@@ -2025,10 +2025,10 @@ function renderCmpTable(data){
       const clsZ=v===0?'z':'';
       const clsZc=vc===0?'z':'';
       const arrow=diff>0?'▲ ':diff<0?'▼ ':'● ';
-      const diffColor=diff>0?'color:var(--go)':diff<0?'color:var(--red-diff)':'color:var(--tx3)';
+      const diffColor=diff>0?'color:var(--go)':diff<0?'color:var(--red-diff)':'color:var(--tx2)';
       const diffStr=diff===0?'0':(diff>0?'+':'')+fmtVal(item,diff);
       h+=`<td class="${clsBase} ${clsZ}">${fmtVal(item,v)}</td>`;
-      h+=`<td class="${clsBase} ${clsZc}" style="color:var(--tx3);">${fmtVal(item,vc)}</td>`;
+      h+=`<td class="${clsBase} ${clsZc}" style="color:var(--tx2);">${fmtVal(item,vc)}</td>`;
       h+=`<td class="${clsBase}" style="${diffColor};font-weight:700;">${arrow}${diffStr}</td>`;
     });
     h+='</tr>';
