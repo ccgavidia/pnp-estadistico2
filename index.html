@@ -2357,13 +2357,24 @@ function dlExcelReporte(){
       const totalColsCmp=1+nYears+nVarCols+nVarCols; // ind + años + varAbs + varPct
       const wsCmp=XLSX.utils.aoa_to_sheet([[null],[null],[null],[null]]);
 
+      // ── Filas de cada año filtradas por el mismo periodo del reporte ──
+      const cmpPt=document.getElementById('rep-ptype').value;
+      function getRowsCmpYear(y){
+        let r=WB[y]||[];
+        if(mode!=='region') r=r.filter(row=>selUnitsSet.has(getUnitOfRow(row)));
+        return filterByPeriod(r,cmpPt);
+      }
+      // Pre-calcular las filas filtradas por año
+      const filteredByYear={};
+      years.forEach(y=>{ filteredByYear[y]=getRowsCmpYear(y); });
+
       // ── Cabecera institucional (filas 0-2) ──
       const cmpMerges=[];
       cmpMerges.push({s:{r:0,c:0},e:{r:0,c:totalColsCmp-1}});
       cmpMerges.push({s:{r:1,c:0},e:{r:1,c:totalColsCmp-1}});
       cmpMerges.push({s:{r:2,c:0},e:{r:2,c:totalColsCmp-1}});
       sc(wsCmp,XLSX.utils.encode_cell({r:0,c:0}),'POLICÍA NACIONAL DEL PERÚ  ·  REGIÓN POLICIAL AMAZONAS',STY.instTitle);
-      sc(wsCmp,XLSX.utils.encode_cell({r:1,c:0}),`COMPARACIÓN ESTADÍSTICA MULTI-AÑO  ·  ${years.join(' / ')}`,STY.instSub);
+      sc(wsCmp,XLSX.utils.encode_cell({r:1,c:0}),`COMPARACIÓN ESTADÍSTICA MULTI-AÑO  ·  ${years.join(' / ')}  ·  ${periodLbl}`,STY.instSub);
       sc(wsCmp,XLSX.utils.encode_cell({r:2,c:0}),`${modoLbl}  |  Generado: ${ts}  |  ${Object.keys(IMAP).length} indicadores`,STY.instMeta);
 
       // ── Sub-cabeceras de grupo (fila 3): INDICADOR | VALORES POR AÑO | VARIACIÓN ABSOLUTA | VARIACIÓN % ──
@@ -2447,7 +2458,7 @@ function dlExcelReporte(){
           const inds=IMAP[k].keys;
           const vals={};
           years.forEach(y=>{
-            const rows=WB[y]||[];
+            const rows=filteredByYear[y]||[];
             vals[y]=rows.filter(r=>inds.includes((r['TIPO INDICADOR']||'').trim())).reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0);
           });
           // Valores por año
@@ -2487,15 +2498,15 @@ function dlExcelReporte(){
       sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:0}),'TOTALES GENERALES',STY.totRowLbl);
       years.forEach((y,yi)=>{
         const tot=allInds.filter(k=>!isKgInd(k)).reduce((s,k)=>{
-          const rows=WB[y]||[];
+          const rows=filteredByYear[y]||[];
           return s+IMAP[k].keys.reduce((ss,key)=>ss+rows.filter(r=>(r['TIPO INDICADOR']||'').trim()===key).reduce((sss,r)=>sss+(parseFloat(r['CANTIDAD'])||0),0),0);
         },0);
         sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:1+yi}),Math.round(tot),STY.totRow,'#,##0');
       });
       // Variación totales
       years.slice(1).forEach((y,i)=>{
-        const tPrev=allInds.filter(k=>!isKgInd(k)).reduce((s,k)=>{const rows=WB[years[i]]||[];return s+IMAP[k].keys.reduce((ss,key)=>ss+rows.filter(r=>(r['TIPO INDICADOR']||'').trim()===key).reduce((sss,r)=>sss+(parseFloat(r['CANTIDAD'])||0),0),0);},0);
-        const tCurr=allInds.filter(k=>!isKgInd(k)).reduce((s,k)=>{const rows=WB[y]||[];return s+IMAP[k].keys.reduce((ss,key)=>ss+rows.filter(r=>(r['TIPO INDICADOR']||'').trim()===key).reduce((sss,r)=>sss+(parseFloat(r['CANTIDAD'])||0),0),0);},0);
+        const tPrev=allInds.filter(k=>!isKgInd(k)).reduce((s,k)=>{const rows=filteredByYear[years[i]]||[];return s+IMAP[k].keys.reduce((ss,key)=>ss+rows.filter(r=>(r['TIPO INDICADOR']||'').trim()===key).reduce((sss,r)=>sss+(parseFloat(r['CANTIDAD'])||0),0),0);},0);
+        const tCurr=allInds.filter(k=>!isKgInd(k)).reduce((s,k)=>{const rows=filteredByYear[y]||[];return s+IMAP[k].keys.reduce((ss,key)=>ss+rows.filter(r=>(r['TIPO INDICADOR']||'').trim()===key).reduce((sss,r)=>sss+(parseFloat(r['CANTIDAD'])||0),0),0);},0);
         sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:nYears+1+i}),Math.round(tCurr-tPrev),STY.totRow,'+#,##0;-#,##0;0');
         const pct=tPrev>0?parseFloat(((tCurr-tPrev)/tPrev*100).toFixed(1)):null;
         sc(wsCmp,XLSX.utils.encode_cell({r:curR,c:nYears+nVarCols+1+i}),pct!==null?pct:'N/D',STY.totRow,pct!==null?'+0.0"%";-0.0"%";"0%"':undefined);
