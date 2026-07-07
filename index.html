@@ -274,6 +274,10 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 .rn.top ~ .rb-bg .rb-fill{background:var(--gold);}
 .rv{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;color:var(--tx);width:50px;text-align:right;flex-shrink:0;}
 
+/* ━━━━━ COMPARACIÓN SEMANAL (aditivo, no reemplaza nada) ━━━━━ */
+table.dt tbody tr.sem-cat-sep td{background:var(--bg4)!important;color:var(--gold)!important;font-weight:800;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;text-align:left!important;border-top:1px solid var(--gold-d);border-bottom:1px solid var(--gold-d);}
+.sw-pill{min-width:64px;text-align:center;}
+
 /* ━━━━━ MULTI-YEAR COMPARISON ━━━━━ */
 .yrcmp-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);}
 .yrcmp-row:last-child{border:none;}
@@ -650,6 +654,7 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
   <div class="ntab" onclick="showP('p-dash',1)">🖼️ Dashboard <span class="nbadge" id="nb-dash" style="display:none">●</span></div>
   <div class="ntab" onclick="showP('p-config',2)">⚙️ Configuración</div>
   <div class="ntab" onclick="showP('p-reporte',3)">📋 Reporte <span class="nbadge" id="nb-rep" style="display:none">●</span></div>
+  <div class="ntab" onclick="showP('p-semanal',4)">📅 Comp. Semanal <span class="nbadge" id="nb-sem" style="display:none">●</span></div>
 
 </div>
 
@@ -1023,6 +1028,89 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
      PANEL 4: EXPORTAR
 ═══════════════════════════════════════ -->
 
+<!-- ═══════════════════════════════════════
+     PANEL 5: COMPARACIÓN SEMANAL (Producción)
+═══════════════════════════════════════ -->
+<div class="panel" id="p-semanal">
+  <div id="sem-empty" class="empty"><div class="empty-ico">📅</div><div class="empty-t">Carga el archivo Excel primero</div><div class="empty-s">Ve a "Datos" para cargar la información de la base de datos</div></div>
+
+  <div id="sem-body" style="display:none">
+    <div class="sh"><div class="sh-ico">📅</div><div class="sh-title" id="sem-title">Comparación Semanal de Producción</div><div class="sh-sub" id="sem-sub">—</div></div>
+
+    <!-- FILTROS -->
+    <div class="filter-section">
+      <div class="f-group f-group-yr">
+        <label class="lbl">Año</label>
+        <select id="sem-yr" onchange="handleSemModeChange()"></select>
+      </div>
+      <div class="f-group">
+        <label class="lbl">Nivel de Detalle</label>
+        <select id="sem-mode" onchange="handleSemModeChange()">
+          <option value="region">Región Amazonas (Total)</option>
+          <option value="division">Por División Policial</option>
+          <option value="comisaria">Por Comisaría / Unidad</option>
+        </select>
+      </div>
+      <div class="f-group" id="sem-group-unit" style="display:none">
+        <label class="lbl" id="sem-unit-label">Seleccionar Unidad</label>
+        <select id="sem-unit" onchange="updSemanal()"></select>
+      </div>
+      <div class="f-group">
+        <label class="lbl">Tipo de Periodo</label>
+        <select id="sem-period-type" onchange="handleSemPeriodTypeChange()">
+          <option value="semana">Semanal</option>
+          <option value="quincena">Quincenal</option>
+          <option value="mes">Mensual</option>
+          <option value="trimestre">Trimestral</option>
+        </select>
+      </div>
+      <div class="f-group">
+        <label class="lbl" id="sem-periods-label">Periodos a Comparar</label>
+        <div class="pills" id="sem-nweeks-pills">
+          <div class="pill sw-pill" data-n="2" onclick="setSemWeeks(2)">2 SEMANAS</div>
+          <div class="pill sw-pill on" data-n="3" onclick="setSemWeeks(3)">3 SEMANAS</div>
+          <div class="pill sw-pill" data-n="4" onclick="setSemWeeks(4)">4 SEMANAS</div>
+        </div>
+      </div>
+      <div class="f-group">
+        <label class="lbl">&nbsp;</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--tx2);cursor:pointer;height:38px;">
+          <input type="checkbox" id="sem-yoy-toggle" onchange="updSemanal()"> Comparar con el año anterior
+        </label>
+      </div>
+      <div class="f-group">
+        <label class="lbl">&nbsp;</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--tx2);cursor:pointer;height:38px;" title="Si hoy es miércoles, la semana en curso solo tiene 3 días de datos y no es comparable de forma proporcional contra semanas completas. Actívalo para que el sistema empiece a contar desde la última semana ya finalizada.">
+          <input type="checkbox" id="sem-exclude-current" checked onchange="updSemanal()"> Empezar desde el último periodo completo (excluir el actual en curso)
+        </label>
+      </div>
+      <div class="f-group f-group-wide">
+        <label class="lbl">Meses de Origen de los Datos</label>
+        <div style="display:flex;gap:5px;">
+          <select id="sem-m-from" onchange="updSemanal()" style="flex:1;"></select>
+          <select id="sem-m-to" onchange="updSemanal()" style="flex:1;"></select>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="card" id="sem-no-data" style="display:none;">
+      <div class="empty"><div class="empty-ico">⚠️</div><div class="empty-t">Sin datos semanales suficientes</div><div class="empty-s">No se encontraron al menos 2 semanas con registros de FECHA válida para el año / unidad seleccionados. Verifique que el Excel tenga la columna FECHA con fechas por registro.</div></div>
+    </div>
+
+    <div class="card" id="sem-tbl-card">
+      <div class="card-t" id="sem-tbl-title">Producción por Semana e Indicador</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <input type="text" id="sem-tbl-q" placeholder="Buscar indicador..." style="max-width:260px;" oninput="filterSemTbl()">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx3);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">
+          <input type="checkbox" id="sem-hide-zero" onchange="filterSemTbl()"> Ocultar ceros
+        </label>
+      </div>
+      <div class="tbl-wrap"><table class="dt" id="sem-dtbl"></table></div>
+    </div>
+  </div>
+</div>
+
 
 </div><!-- /wrap -->
 <div class="wmk">PNP · Región Policial Amazonas · Sistema Estadístico Operacional v4.0 · Clasificación: <span id="wmk-class">Uso Interno</span></div>
@@ -1385,6 +1473,7 @@ function processExcelBuffer(arrayBuffer, source){
 
     buildIndPills();buildMGrid();
     initDashSelectors();
+    initSemanalSelectors();
 
     document.getElementById('load-ok').style.display='block';
     document.getElementById('load-err').style.display='none';
@@ -2535,7 +2624,375 @@ function dlExcelReporte(){
   }
 }
 
-document.getElementById('exp-class').addEventListener('change',function(){document.getElementById('wmk-class').textContent=this.value;});
+const _expClassEl=document.getElementById('exp-class');
+if(_expClassEl){_expClassEl.addEventListener('change',function(){document.getElementById('wmk-class').textContent=this.value;});}
+
+// ══════════════════════════════════════════════════════════
+//  COMPARACIÓN POR PERIODO (Producción) — MÓDULO NUEVO
+//  No modifica ninguna función ni variable existente del sistema.
+//  Soporta: Semanal, Quincenal, Mensual y Trimestral,
+//  con opción de comparar contra el mismo periodo del año anterior.
+// ══════════════════════════════════════════════════════════
+
+// ── Semana ISO 8601 (Lunes a Domingo) ──
+function isoWeek(date){
+  const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));
+  const dayNum=d.getUTCDay()||7; // Lunes=1 ... Domingo=7
+  d.setUTCDate(d.getUTCDate()+4-dayNum);
+  const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  const weekNo=Math.ceil((((d-yearStart)/86400000)+1)/7);
+  return {isoYear:d.getUTCFullYear(),week:weekNo};
+}
+// Devuelve la fecha del Lunes de una semana ISO dada
+function isoWeekStart(isoYear,week){
+  const jan4=new Date(Date.UTC(isoYear,0,4));
+  const jan4Day=jan4.getUTCDay()||7;
+  const week1Monday=new Date(jan4);week1Monday.setUTCDate(jan4.getUTCDate()-jan4Day+1);
+  const monday=new Date(week1Monday);monday.setUTCDate(week1Monday.getUTCDate()+(week-1)*7);
+  return monday;
+}
+function semWeekLabel(monday,sunday){
+  const f=d=>String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0');
+  return f(monday)+' – '+f(sunday);
+}
+
+// ── Textos según tipo de periodo (para pills, etiquetas y título) ──
+const SEM_PERIOD_LABELS={
+  semana:{plural:'SEMANAS',genero:'comparadas',titulo:'Comparación Semanal de Producción',tbl:'Producción por Semana e Indicador'},
+  quincena:{plural:'QUINCENAS',genero:'comparadas',titulo:'Comparación Quincenal de Producción',tbl:'Producción por Quincena e Indicador'},
+  mes:{plural:'MESES',genero:'comparados',titulo:'Comparación Mensual de Producción',tbl:'Producción por Mes e Indicador'},
+  trimestre:{plural:'TRIMESTRES',genero:'comparados',titulo:'Comparación Trimestral de Producción',tbl:'Producción por Trimestre e Indicador'}
+};
+
+// ── Calcula a qué periodo (según tipo) pertenece una fecha ──
+function semGetPeriodInfo(date,periodType){
+  const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));
+  const month=d.getUTCMonth(); // 0-based
+  const day=d.getUTCDate();
+  const y=d.getUTCFullYear();
+  if(periodType==='semana'){
+    const iso=isoWeek(date);
+    return {periodYear:iso.isoYear,periodNum:iso.week,key:iso.isoYear*100+iso.week};
+  }
+  if(periodType==='quincena'){
+    const q=(month*2)+(day<=15?1:2); // 1..24
+    return {periodYear:y,periodNum:q,key:y*100+q};
+  }
+  if(periodType==='mes'){
+    const m=month+1; // 1..12
+    return {periodYear:y,periodNum:m,key:y*100+m};
+  }
+  // trimestre
+  const t=Math.ceil((month+1)/3); // 1..4
+  return {periodYear:y,periodNum:t,key:y*100+t};
+}
+
+// ── Genera {main, sub} para encabezado de columna según tipo de periodo ──
+function semPeriodLabelParts(periodType,periodYear,periodNum){
+  if(periodType==='semana'){
+    const monday=isoWeekStart(periodYear,periodNum);
+    const sunday=new Date(monday);sunday.setUTCDate(monday.getUTCDate()+6);
+    return {main:'SEM '+periodNum,sub:semWeekLabel(monday,sunday)};
+  }
+  if(periodType==='quincena'){
+    const monthIdx=Math.floor((periodNum-1)/2); // 0-based
+    const isFirstHalf=(periodNum%2===1);
+    const lastDay=new Date(Date.UTC(periodYear,monthIdx+1,0)).getUTCDate();
+    return {main:isFirstHalf?'DEL 1 AL 15':'DEL 16 AL '+lastDay,sub:MONTHS[monthIdx]+' '+periodYear};
+  }
+  if(periodType==='mes'){
+    return {main:MONTHS[periodNum-1],sub:String(periodYear)};
+  }
+  // trimestre
+  return {main:'TRIM '+periodNum,sub:String(periodYear)};
+}
+
+// ── Devuelve la fecha (UTC) del ÚLTIMO día de un periodo, para saber si ya finalizó o sigue en curso ──
+function semPeriodEndDate(periodType,periodYear,periodNum){
+  if(periodType==='semana'){
+    const monday=isoWeekStart(periodYear,periodNum);
+    const sunday=new Date(monday);sunday.setUTCDate(monday.getUTCDate()+6);
+    return sunday;
+  }
+  if(periodType==='quincena'){
+    const monthIdx=Math.floor((periodNum-1)/2);
+    const isFirstHalf=(periodNum%2===1);
+    return isFirstHalf?new Date(Date.UTC(periodYear,monthIdx,15)):new Date(Date.UTC(periodYear,monthIdx+1,0));
+  }
+  if(periodType==='mes'){
+    return new Date(Date.UTC(periodYear,periodNum,0)); // último día del mes
+  }
+  // trimestre: último día del 3er mes del trimestre
+  const firstMonth=(periodNum-1)*3;
+  return new Date(Date.UTC(periodYear,firstMonth+3,0));
+}
+
+// ── Poblar selects de rango de meses (mismo patrón 0-based que m-from/m-to del sistema) ──
+function initSemMonthRange(){
+  const smF=document.getElementById('sem-m-from');
+  const smT=document.getElementById('sem-m-to');
+  if(!smF||!smT) return;
+  smF.innerHTML='';smT.innerHTML='';
+  MONTHS.forEach((m,i)=>{
+    const o1=document.createElement('option');o1.value=i;o1.textContent=m;smF.appendChild(o1);
+    const o2=document.createElement('option');o2.value=i;o2.textContent=m;smT.appendChild(o2);
+  });
+  smF.selectedIndex=0;
+  smT.selectedIndex=11;
+}
+
+// ── Inicializar selector de año al cargar datos ──
+function initSemanalSelectors(){
+  const sel=document.getElementById('sem-yr');
+  if(!sel) return;
+  sel.innerHTML='';
+  availYears.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;sel.appendChild(o);});
+  if(sel.options.length) sel.selectedIndex=sel.options.length-1; // año más reciente por defecto
+  document.getElementById('sem-empty').style.display='none';
+  document.getElementById('sem-body').style.display='block';
+  document.getElementById('nb-sem').style.display='inline';
+  initSemMonthRange();
+  updateSemPillLabels();
+  handleSemModeChange();
+}
+
+// ── Cambiar nivel de detalle (Región / División / Comisaría) ──
+function handleSemModeChange(){
+  const modeS=document.getElementById('sem-mode').value;
+  const grp=document.getElementById('sem-group-unit');
+  const sel=document.getElementById('sem-unit');
+  const lbl=document.getElementById('sem-unit-label');
+  const yr=document.getElementById('sem-yr').value;
+  const rows=WB[yr]||[];
+  if(modeS==='region'){
+    grp.style.display='none';
+  }else{
+    grp.style.display='block';
+    sel.innerHTML='<option value="all">TODAS</option>';
+    if(modeS==='division'){
+      lbl.textContent='Elegir División';
+      const divs=[...new Set(rows.map(r=>normalizeDivision(r['DIVISION']||r['DIVISIÓN']||'')).filter(Boolean))].sort();
+      divs.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
+    }else if(modeS==='comisaria'){
+      lbl.textContent='Elegir Comisaría';
+      const coms=[...new Set(rows.map(r=>r['COMISARIA']||r['COMISARÍA']||r['COMISARIA PNP']||r['SUBUNIDAD']).filter(Boolean))].sort();
+      coms.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+    }
+  }
+  updSemanal();
+}
+
+// ── Cambiar tipo de periodo (Semanal / Quincenal / Mensual / Trimestral) ──
+function handleSemPeriodTypeChange(){
+  updateSemPillLabels();
+  updSemanal();
+}
+
+// ── Actualiza el texto de los pills y el título según el tipo de periodo elegido ──
+function updateSemPillLabels(){
+  const pt=document.getElementById('sem-period-type').value;
+  const info=SEM_PERIOD_LABELS[pt]||SEM_PERIOD_LABELS.semana;
+  document.querySelectorAll('.sw-pill').forEach(p=>{p.textContent=p.dataset.n+' '+info.plural;});
+  const titleEl=document.getElementById('sem-title');
+  if(titleEl) titleEl.textContent=info.titulo;
+  const tblTitleEl=document.getElementById('sem-tbl-title');
+  if(tblTitleEl) tblTitleEl.textContent=info.tbl;
+}
+
+// ── Elegir cuántos periodos comparar (2, 3 ó 4) ──
+function setSemWeeks(n){
+  document.querySelectorAll('.sw-pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.n)===n));
+  updSemanal();
+}
+
+// ── Filtra filas de un año según nivel/unidad seleccionados ──
+function semFilterRowsForYear(yr){
+  const modeS=document.getElementById('sem-mode').value;
+  const unitSel=document.getElementById('sem-unit');
+  const unitVal=unitSel?unitSel.value:'all';
+  let rows=WB[yr]||[];
+  if(modeS!=='region'&&unitVal&&unitVal!=='all'){
+    rows=rows.filter(r=>{
+      if(modeS==='division') return normalizeDivision(r['DIVISION']||r['DIVISIÓN']||'')===unitVal;
+      return (r['COMISARIA']||r['COMISARÍA']||r['COMISARIA PNP']||r['SUBUNIDAD'])===unitVal;
+    });
+  }
+  return rows;
+}
+
+// ── Agrupar filas por periodo (semana/quincena/mes/trimestre) según año/nivel/unidad seleccionados ──
+function computeSemanalWeeks(){
+  const yrSel=document.getElementById('sem-yr');
+  if(!yrSel||!yrSel.value) return null;
+  const yr=yrSel.value;
+  const periodType=(document.getElementById('sem-period-type')||{}).value||'semana';
+  const activePill=document.querySelector('.sw-pill.on');
+  const nWeeks=activePill?parseInt(activePill.dataset.n):3;
+  const wantYoy=!!(document.getElementById('sem-yoy-toggle')||{}).checked;
+  // ── Rango de meses de origen (0-based, igual que m-from/m-to del sistema) ──
+  const mFromEl=document.getElementById('sem-m-from');
+  const mToEl=document.getElementById('sem-m-to');
+  const mFrom=mFromEl&&mFromEl.value!==''?parseInt(mFromEl.value):0;
+  const mTo=mToEl&&mToEl.value!==''?parseInt(mToEl.value):11;
+  const monthOk=d=>{const mi=d.getMonth();return mi>=mFrom&&mi<=mTo;};
+
+  const rows=semFilterRowsForYear(yr);
+
+  const periodMap=new Map();
+  rows.forEach(r=>{
+    if(!r['FECHA']) return;
+    const d=new Date(r['FECHA']);
+    if(isNaN(d.getTime())) return;
+    if(!monthOk(d)) return;
+    const info=semGetPeriodInfo(d,periodType);
+    if(!periodMap.has(info.key)) periodMap.set(info.key,{key:info.key,periodYear:info.periodYear,periodNum:info.periodNum,rows:[]});
+    periodMap.get(info.key).rows.push(r);
+  });
+  if(!periodMap.size) return {weeksResult:[],nWeeks,periodType};
+
+  let allPeriods=[...periodMap.values()].sort((a,b)=>a.key-b.key);
+
+  // ── Excluir el periodo actual en curso (incompleto) para que la comparación sea proporcional ──
+  const excludeCurrent=!!(document.getElementById('sem-exclude-current')||{}).checked;
+  let hadCurrentExcluded=false;
+  if(excludeCurrent){
+    const now=new Date();
+    const todayUTC=new Date(Date.UTC(now.getFullYear(),now.getMonth(),now.getDate()));
+    const filtered=allPeriods.filter(p=>semPeriodEndDate(periodType,p.periodYear,p.periodNum)<todayUTC);
+    if(filtered.length<allPeriods.length) hadCurrentExcluded=true;
+    allPeriods=filtered;
+  }
+  if(!allPeriods.length) return {weeksResult:[],nWeeks,periodType};
+
+  const lastN=allPeriods.slice(-nWeeks);
+  const weeksResult=lastN.map(p=>{
+    const parts=semPeriodLabelParts(periodType,p.periodYear,p.periodNum);
+    return {main:parts.main,sub:parts.sub,periodYear:p.periodYear,periodNum:p.periodNum,rows:p.rows};
+  });
+
+  // ── Comparación contra el mismo periodo del año anterior (solo si el usuario lo activó) ──
+  let yoyRows=null,yoyLabel=null;
+  const lastP=weeksResult[weeksResult.length-1];
+  if(wantYoy&&lastP){
+    const prevYr=String(parseInt(yr)-1);
+    if(WB[prevYr]){
+      const prevRows=semFilterRowsForYear(prevYr);
+      yoyRows=prevRows.filter(r=>{
+        if(!r['FECHA']) return false;
+        const d=new Date(r['FECHA']);
+        if(isNaN(d.getTime())) return false;
+        if(!monthOk(d)) return false;
+        const info=semGetPeriodInfo(d,periodType);
+        return info.periodYear===(lastP.periodYear-1)&&info.periodNum===lastP.periodNum;
+      });
+      const yoyParts=semPeriodLabelParts(periodType,lastP.periodYear-1,lastP.periodNum);
+      yoyLabel=yoyParts.main+' · '+yoyParts.sub;
+    }
+  }
+
+  return {weeksResult,nWeeks,periodType,yoyRows,yoyLabel,hadCurrentExcluded};
+}
+
+// ── Renderizar tabla: periodos + diferencia (último vs. anterior), con color rojo/verde ──
+function renderSemTable(data){
+  const {weeksResult,yoyRows,yoyLabel}=data;
+  const nW=weeksResult.length;
+  const cats=['ops','drog','veh','arm'];
+  const catLabel={'ops':'OPERATIVOS Y CAPTURAS','drog':'DROGAS Y SUSTANCIAS','veh':'VEHÍCULOS','arm':'ARMAS'};
+  const allInds=Object.keys(IMAP);
+
+  let h='<thead><tr class="hdr1"><th style="text-align:left;">INDICADOR</th>';
+  weeksResult.forEach((w,i)=>{
+    const isLast=i===nW-1;
+    h+=`<th>${w.main}${isLast?' (ÚLTIMO)':''}<br><span style="font-size:9px;color:var(--tx3);text-transform:none;">${w.sub}</span></th>`;
+  });
+  h+='<th>DIFERENCIA</th>';
+  if(yoyRows) h+=`<th>AÑO ANTERIOR<br><span style="font-size:9px;color:var(--tx3);text-transform:none;">${yoyLabel}</span></th>`;
+  h+='</tr></thead><tbody>';
+
+  const colspanExtra=yoyRows?1:0;
+
+  cats.forEach(cat=>{
+    const catInds=allInds.filter(k=>IMAP[k].cat===cat);
+    if(!catInds.length) return;
+    h+=`<tr class="sem-cat-sep"><td colspan="${nW+2+colspanExtra}">${catLabel[cat]||cat.toUpperCase()}</td></tr>`;
+    catInds.forEach(k=>{
+      const keys=IMAP[k].keys;
+      const vals=weeksResult.map(w=>w.rows.filter(r=>keys.includes((r['TIPO INDICADOR']||'').trim())).reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0));
+      const totRow=vals.reduce((a,b)=>a+b,0);
+      const last=nW?vals[nW-1]:0;
+      const prev=nW>1?vals[nW-2]:0;
+      const diffRaw=last-prev;
+      const diff=isKgInd(k)?parseFloat(diffRaw.toFixed(3)):diffRaw;
+      // Color: verde positivo, rojo negativo (mismo patrón que el resto del sistema)
+      const diffColor=diffRaw>0?'color:var(--go)':diffRaw<0?'color:var(--red-diff)':'color:var(--tx3)';
+
+      h+=`<tr data-q="${k.toLowerCase()}" data-tot="${totRow}"><td>${k}</td>`;
+      vals.forEach((v,i)=>{
+        const cls=v===0?'z':(i===nW-1?'tot':'');
+        h+=`<td class="${cls}">${fmtVal(k,v)}</td>`;
+      });
+      const diffStr=diffRaw===0?'0':(diffRaw>0?'+':'')+fmtVal(k,diff);
+      h+=`<td style="font-weight:700;${diffColor}">${diffStr}</td>`;
+      if(yoyRows){
+        const yoyVal=yoyRows.filter(r=>keys.includes((r['TIPO INDICADOR']||'').trim())).reduce((s,r)=>s+(parseFloat(r['CANTIDAD'])||0),0);
+        const yoyDiff=last-yoyVal;
+        const yoyColor=yoyDiff>0?'color:var(--go)':yoyDiff<0?'color:var(--red-diff)':'color:var(--tx3)';
+        h+=`<td style="font-weight:700;${yoyColor}">${fmtVal(k,yoyVal)}</td>`;
+      }
+      h+='</tr>';
+    });
+  });
+  document.getElementById('sem-dtbl').innerHTML=h+'</tbody>';
+}
+
+// ── Actualizar todo el panel de comparación por periodo ──
+function updSemanal(){
+  const tblCard=document.getElementById('sem-tbl-card');
+  const noData=document.getElementById('sem-no-data');
+  const tbl=document.getElementById('sem-dtbl');
+  if(!tbl) return;
+
+  const data=computeSemanalWeeks();
+  if(!data||!data.weeksResult||data.weeksResult.length<2){
+    noData.style.display='block';
+    tblCard.style.display='none';
+    tbl.innerHTML='';
+    document.getElementById('sem-sub').textContent='Sin datos suficientes';
+    return;
+  }
+  noData.style.display='none';
+  tblCard.style.display='block';
+  renderSemTable(data);
+
+  const yr=document.getElementById('sem-yr').value;
+  const modeS=document.getElementById('sem-mode').value;
+  const unitVal=(document.getElementById('sem-unit')||{}).value;
+  const modoLbl=modeS==='region'?'Región Amazonas (Total)':modeS==='division'?'División: '+(unitVal==='all'?'Todas':unitVal):'Comisaría: '+(unitVal==='all'?'Todas':unitVal);
+  const periodInfo=SEM_PERIOD_LABELS[data.periodType]||SEM_PERIOD_LABELS.semana;
+  const mFromEl=document.getElementById('sem-m-from');
+  const mToEl=document.getElementById('sem-m-to');
+  let rangoLbl='';
+  if(mFromEl&&mToEl){
+    const mf=parseInt(mFromEl.value),mt=parseInt(mToEl.value);
+    rangoLbl=(mf===0&&mt===11)?'':` · Datos de ${MONTHS[mf]} a ${MONTHS[mt]}`;
+  }
+  document.getElementById('sem-sub').textContent=`Año ${yr} · ${modoLbl} · ${data.weeksResult.length} ${periodInfo.plural.toLowerCase()} ${periodInfo.genero}${data.yoyRows?' · vs. año anterior':''}${rangoLbl}${data.hadCurrentExcluded?' · Periodo en curso excluido (comparación proporcional)':''}`;
+}
+
+
+
+// ── Filtro de búsqueda / ocultar ceros en la tabla semanal ──
+function filterSemTbl(){
+  const q=(document.getElementById('sem-tbl-q').value||'').toLowerCase();
+  const hz=document.getElementById('sem-hide-zero').checked;
+  document.querySelectorAll('#sem-dtbl tbody tr').forEach(r=>{
+    if(r.classList.contains('sem-cat-sep')) return;
+    const matchQ=(r.dataset.q||'').includes(q);
+    const matchZ=!hz||parseFloat(r.dataset.tot)>0;
+    r.style.display=(matchQ&&matchZ)?'':'none';
+  });
+}
 
 // Inicializar
 buildMGrid();
