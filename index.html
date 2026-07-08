@@ -655,6 +655,7 @@ table.dt tbody tr.sem-cat-sep td{background:var(--bg4)!important;color:var(--gol
   <div class="ntab" onclick="showP('p-config',2)">⚙️ Configuración</div>
   <div class="ntab" onclick="showP('p-reporte',3)">📋 Reporte <span class="nbadge" id="nb-rep" style="display:none">●</span></div>
   <div class="ntab" onclick="showP('p-semanal',4)">📅 Comp. Semanal <span class="nbadge" id="nb-sem" style="display:none">●</span></div>
+  <div class="ntab" onclick="showP('p-comparativo',5)">📊 Comparativo Anual <span class="nbadge" id="nb-cr" style="display:none">●</span></div>
 
 </div>
 
@@ -1111,6 +1112,50 @@ table.dt tbody tr.sem-cat-sep td{background:var(--bg4)!important;color:var(--gol
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════
+     PANEL 6: COMPARATIVO ANUAL (Reporte tipo "Boletín")
+═══════════════════════════════════════ -->
+<div class="panel" id="p-comparativo">
+  <div id="cr-empty" class="empty"><div class="empty-ico">📊</div><div class="empty-t">Carga el archivo Excel primero</div><div class="empty-s">Ve a "Datos" para cargar la información de la base de datos</div></div>
+
+  <div id="cr-body" style="display:none">
+    <div class="sh"><div class="sh-ico">📊</div><div class="sh-title">Comparativo Interanual y Mensual de Producción</div><div class="sh-sub" id="cr-sub">—</div></div>
+
+    <div class="filter-section">
+      <div class="f-group">
+        <label class="lbl">Fecha de Corte</label>
+        <input type="date" id="cr-cutoff" onchange="updComparativo()">
+      </div>
+      <div class="f-group">
+        <label class="lbl">Nivel de Detalle</label>
+        <select id="cr-mode" onchange="handleCrModeChange()">
+          <option value="region">Región Amazonas (Total)</option>
+          <option value="division">Por División Policial</option>
+          <option value="comisaria">Por Comisaría / Unidad</option>
+        </select>
+      </div>
+      <div class="f-group" id="cr-group-unit" style="display:none">
+        <label class="lbl" id="cr-unit-label">Seleccionar Unidad</label>
+        <select id="cr-unit" onchange="updComparativo()"></select>
+      </div>
+    </div>
+
+    <div class="card" id="cr-no-data" style="display:none;">
+      <div class="empty"><div class="empty-ico">⚠️</div><div class="empty-t">Sin datos suficientes</div><div class="empty-s">No se encontró información del año anterior a la fecha de corte seleccionada. Verifique que el Excel tenga cargado ese año.</div></div>
+    </div>
+
+    <div class="btn-group" id="cr-export-bar" style="margin-bottom:14px;">
+      <button class="btn btn-out" onclick="crExportPDF()">📄 Descargar PDF</button>
+      <button class="btn btn-out" onclick="crExportExcel()">📊 Descargar Excel</button>
+      <button class="btn btn-out" onclick="crExportImage()">🖼️ Descargar Imagen</button>
+    </div>
+
+    <div class="card" id="cr-tbl-card">
+      <div class="tbl-wrap"><table class="dt" id="cr-tbl"></table></div>
+    </div>
+  </div>
+</div>
+
 
 </div><!-- /wrap -->
 <div class="wmk">PNP · Región Policial Amazonas · Sistema Estadístico Operacional v4.0 · Clasificación: <span id="wmk-class">Uso Interno</span></div>
@@ -1474,6 +1519,7 @@ function processExcelBuffer(arrayBuffer, source){
     buildIndPills();buildMGrid();
     initDashSelectors();
     initSemanalSelectors();
+    initComparativoSelectors();
 
     document.getElementById('load-ok').style.display='block';
     document.getElementById('load-err').style.display='none';
@@ -2992,6 +3038,287 @@ function filterSemTbl(){
     const matchZ=!hz||parseFloat(r.dataset.tot)>0;
     r.style.display=(matchQ&&matchZ)?'':'none';
   });
+}
+
+// ══════════════════════════════════════════════════════════
+//  COMPARATIVO ANUAL (Reporte tipo "Boletín") — MÓDULO NUEVO
+//  No modifica ninguna función ni variable existente del sistema.
+//  Replica el formato de reporte: Acumulado ENE-corte (año ant. vs
+//  actual), Mes completo de referencia, Rango 01-corte del mes
+//  (año ant. vs actual) y Diferencia Mensual al año anterior.
+// ══════════════════════════════════════════════════════════
+
+// Estructura de filas del reporte (idéntica a las categorías/indicadores del sistema — reutiliza IMAP)
+// Orden e indicadores del reporte: se reutiliza IMAP directamente (una sola columna por indicador,
+// sin dividir en grupo + subetiqueta), agrupados por categoría igual que en Comp. Semanal.
+const CR_CATS=['ops','drog','veh','arm'];
+const CR_CAT_LABEL={'ops':'OPERATIVOS Y CAPTURAS','drog':'DROGAS Y SUSTANCIAS','veh':'VEHÍCULOS','arm':'ARMAS'};
+
+// ── Clave numérica AAAAMMDD para comparar fechas fácilmente ──
+function crYmd(d){return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
+function crLastDayOfMonth(y,m0){return new Date(y,m0+1,0).getDate();}
+
+// ── Filtrar filas de un año según nivel/unidad elegidos en ESTE panel (independiente del resto del sistema) ──
+function crFilterRowsForYear(yr){
+  const modeS=document.getElementById('cr-mode').value;
+  const unitSel=document.getElementById('cr-unit');
+  const unitVal=unitSel?unitSel.value:'all';
+  let rows=WB[yr]||[];
+  if(modeS!=='region'&&unitVal&&unitVal!=='all'){
+    rows=rows.filter(r=>{
+      if(modeS==='division') return normalizeDivision(r['DIVISION']||r['DIVISIÓN']||'')===unitVal;
+      return (r['COMISARIA']||r['COMISARÍA']||r['COMISARIA PNP']||r['SUBUNIDAD'])===unitVal;
+    });
+  }
+  return rows;
+}
+
+// ── Suma el valor de un indicador para un año, entre dos claves AAAAMMDD (inclusive) ──
+function crSumIndicator(yr,indKey,fromNum,toNum){
+  if(!WB[yr]) return 0;
+  const keys=IMAP[indKey].keys;
+  const rows=crFilterRowsForYear(yr);
+  let total=0;
+  rows.forEach(r=>{
+    if(!r['FECHA']) return;
+    if(!keys.includes((r['TIPO INDICADOR']||'').trim())) return;
+    const d=new Date(r['FECHA']);
+    if(isNaN(d.getTime())) return;
+    const num=crYmd(d);
+    if(num>=fromNum&&num<=toNum) total+=(parseFloat(r['CANTIDAD'])||0);
+  });
+  return total;
+}
+
+// ── Inicializar la fecha de corte y selectores al cargar datos ──
+function initComparativoSelectors(){
+  const cutoffEl=document.getElementById('cr-cutoff');
+  if(!cutoffEl) return;
+  // Buscar la fecha más reciente disponible en toda la base de datos, para usarla como corte por defecto
+  let maxDate=null;
+  Object.keys(WB).forEach(yr=>{
+    (WB[yr]||[]).forEach(r=>{
+      if(!r['FECHA']) return;
+      const d=new Date(r['FECHA']);
+      if(isNaN(d.getTime())) return;
+      if(!maxDate||d>maxDate) maxDate=d;
+    });
+  });
+  const base=maxDate||new Date();
+  const p=x=>String(x).padStart(2,'0');
+  cutoffEl.value=`${base.getFullYear()}-${p(base.getMonth()+1)}-${p(base.getDate())}`;
+  document.getElementById('cr-empty').style.display='none';
+  document.getElementById('cr-body').style.display='block';
+  document.getElementById('nb-cr').style.display='inline';
+  handleCrModeChange();
+}
+
+// ── Cambiar nivel de detalle (Región / División / Comisaría) ──
+function handleCrModeChange(){
+  const modeS=document.getElementById('cr-mode').value;
+  const grp=document.getElementById('cr-group-unit');
+  const sel=document.getElementById('cr-unit');
+  const lbl=document.getElementById('cr-unit-label');
+  if(modeS==='region'){
+    grp.style.display='none';
+  }else{
+    grp.style.display='block';
+    sel.innerHTML='<option value="all">TODAS</option>';
+    // Unir las unidades de todos los años disponibles para no perder ninguna
+    const allRows=Object.keys(WB).reduce((acc,yr)=>acc.concat(WB[yr]||[]),[]);
+    if(modeS==='division'){
+      lbl.textContent='Elegir División';
+      const divs=[...new Set(allRows.map(r=>normalizeDivision(r['DIVISION']||r['DIVISIÓN']||'')).filter(Boolean))].sort();
+      divs.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
+    }else if(modeS==='comisaria'){
+      lbl.textContent='Elegir Comisaría';
+      const coms=[...new Set(allRows.map(r=>r['COMISARIA']||r['COMISARÍA']||r['COMISARIA PNP']||r['SUBUNIDAD']).filter(Boolean))].sort();
+      coms.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+    }
+  }
+  updComparativo();
+}
+
+// ── Construye una celda de diferencia con flecha y color rojo/verde (mismo patrón que el resto del sistema) ──
+function crDiffCell(indKey,diffRaw){
+  const diff=isKgInd(indKey)?parseFloat(diffRaw.toFixed(3)):diffRaw;
+  const color=diffRaw>0?'var(--go)':diffRaw<0?'var(--red-diff)':'var(--tx3)';
+  const arrow=diffRaw>0?'▲':diffRaw<0?'▼':'●';
+  const val=(diffRaw>0?'+':'')+fmtVal(indKey,diff);
+  return `<td style="font-weight:700;color:${color};">${arrow} ${val}</td>`;
+}
+
+// ── Generar y pintar el reporte comparativo completo (mismo estilo/tema oscuro del sistema) ──
+function updComparativo(){
+  const cutoffEl=document.getElementById('cr-cutoff');
+  const tbl=document.getElementById('cr-tbl');
+  const noData=document.getElementById('cr-no-data');
+  const tblCard=document.getElementById('cr-tbl-card');
+  if(!cutoffEl||!cutoffEl.value||!tbl) return;
+
+  const cutoff=new Date(cutoffEl.value+'T00:00:00');
+  if(isNaN(cutoff.getTime())) return;
+  const yrCur=String(cutoff.getFullYear());
+  const yrPrev=String(cutoff.getFullYear()-1);
+  const month0=cutoff.getMonth();
+  const day=cutoff.getDate();
+
+  if(!WB[yrCur]&&!WB[yrPrev]){
+    noData.style.display='block';
+    tblCard.style.display='none';
+    tbl.innerHTML='';
+    document.getElementById('cr-sub').textContent='Sin datos suficientes';
+    return;
+  }
+  noData.style.display='none';
+  tblCard.style.display='block';
+
+  // ── Rangos de fechas (formato AAAAMMDD) ──
+  const ytdPrevFrom=parseInt(yrPrev+'0101'), ytdPrevTo=parseInt(yrPrev+String(month0+1).padStart(2,'0')+String(day).padStart(2,'0'));
+  const ytdCurFrom=parseInt(yrCur+'0101'), ytdCurTo=parseInt(yrCur+String(month0+1).padStart(2,'0')+String(day).padStart(2,'0'));
+  const lastDayPrevMonth=crLastDayOfMonth(cutoff.getFullYear()-1,month0);
+  const monthFullPrevFrom=parseInt(yrPrev+String(month0+1).padStart(2,'0')+'01'), monthFullPrevTo=parseInt(yrPrev+String(month0+1).padStart(2,'0')+String(lastDayPrevMonth).padStart(2,'0'));
+  const partialPrevFrom=monthFullPrevFrom, partialPrevTo=ytdPrevTo;
+  const partialCurFrom=parseInt(yrCur+String(month0+1).padStart(2,'0')+'01'), partialCurTo=ytdCurTo;
+
+  // ── Etiquetas de encabezado ──
+  const p=x=>String(x).padStart(2,'0');
+  const ddmm=`${p(day)}${MONTHS[month0]}`;
+  const tituloFecha=`${p(day)}${MONTHS[month0]}${yrCur}`;
+  const h_ytdPrev=`01ENE - ${ddmm}${yrPrev}`;
+  const h_ytdCur=`01ENE - ${ddmm}${yrCur}`;
+  const h_mesFull=`${MNAMES[month0].toUpperCase()} ${yrPrev}`;
+  const h_partialPrev=`01${MONTHS[month0]}${yrPrev} AL ${ddmm}${yrPrev}`;
+  const h_partialCur=`01${MONTHS[month0]}${yrCur} AL ${ddmm}${yrCur}`;
+  const h_diffMensual=`DIF. MENSUAL AL ${yrPrev}`;
+
+  let h=`<thead>
+    <tr><th colspan="9" style="text-align:left;background:var(--bg4);color:var(--gold);font-size:14px;font-weight:800;letter-spacing:.04em;border-bottom:2px solid var(--gold-d);">REGIÓN POLICIAL AMAZONAS · PRODUCCIÓN AL ${tituloFecha}</th></tr>
+    <tr class="hdr1">
+      <th style="text-align:left;">INDICADOR</th>
+      <th>${h_ytdPrev}</th>
+      <th>${h_ytdCur}</th>
+      <th>DIFERENCIA</th>
+      <th>${h_mesFull}</th>
+      <th>${h_partialPrev}</th>
+      <th>${h_partialCur}</th>
+      <th>DIFERENCIA</th>
+      <th>${h_diffMensual}</th>
+    </tr>
+  </thead><tbody>`;
+
+  CR_CATS.forEach(cat=>{
+    const catInds=Object.keys(IMAP).filter(k=>IMAP[k].cat===cat);
+    if(!catInds.length) return;
+    h+=`<tr class="sem-cat-sep"><td colspan="9">${CR_CAT_LABEL[cat]||cat.toUpperCase()}</td></tr>`;
+    catInds.forEach(indKey=>{
+      const ytdPrevV=crSumIndicator(yrPrev,indKey,ytdPrevFrom,ytdPrevTo);
+      const ytdCurV=crSumIndicator(yrCur,indKey,ytdCurFrom,ytdCurTo);
+      const mesFullV=crSumIndicator(yrPrev,indKey,monthFullPrevFrom,monthFullPrevTo);
+      const partialPrevV=crSumIndicator(yrPrev,indKey,partialPrevFrom,partialPrevTo);
+      const partialCurV=crSumIndicator(yrCur,indKey,partialCurFrom,partialCurTo);
+      const diffYtd=ytdCurV-ytdPrevV;
+      const diffPartial=partialCurV-partialPrevV;
+      const diffMensual=partialCurV-mesFullV;
+
+      h+='<tr>';
+      h+=`<td>${indKey}</td>`;
+      h+=`<td>${fmtVal(indKey,ytdPrevV)}</td>`;
+      h+=`<td>${fmtVal(indKey,ytdCurV)}</td>`;
+      h+=crDiffCell(indKey,diffYtd);
+      h+=`<td class="tot">${fmtVal(indKey,mesFullV)}</td>`;
+      h+=`<td>${fmtVal(indKey,partialPrevV)}</td>`;
+      h+=`<td>${fmtVal(indKey,partialCurV)}</td>`;
+      h+=crDiffCell(indKey,diffPartial);
+      h+=crDiffCell(indKey,diffMensual);
+      h+='</tr>';
+    });
+  });
+
+  h+='</tbody>';
+  tbl.innerHTML=h;
+
+  const modeS=document.getElementById('cr-mode').value;
+  const unitVal=(document.getElementById('cr-unit')||{}).value;
+  const modoLbl=modeS==='region'?'Región Amazonas (Total)':modeS==='division'?'División: '+(unitVal==='all'?'Todas':unitVal):'Comisaría: '+(unitVal==='all'?'Todas':unitVal);
+  const faltaAnio=(!WB[yrPrev])?` · ⚠ Sin datos cargados de ${yrPrev}`:'';
+  document.getElementById('cr-sub').textContent=`Corte: ${p(day)}/${p(month0+1)}/${yrCur} · ${modoLbl}${faltaAnio}`;
+}
+
+// ── Nombre de archivo base para las exportaciones (usa la fecha de corte visible) ──
+function crFileBaseName(){
+  const cutoffEl=document.getElementById('cr-cutoff');
+  const fecha=(cutoffEl&&cutoffEl.value)?cutoffEl.value.replace(/-/g,''):'reporte';
+  return `Comparativo_Anual_REGPOL_Amazonas_${fecha}`;
+}
+
+// ── Exportar SOLO el cuadro (tabla) del Comparativo Anual a PDF ──
+async function crExportPDF(){
+  const btn=document.querySelector('#cr-export-bar .btn:nth-child(1)');
+  const origTxt=btn?btn.innerHTML:'';
+  if(btn){btn.innerHTML='⏳ Generando PDF...';btn.disabled=true;}
+  try{
+    const element=document.getElementById('cr-tbl-card');
+    const opt={
+      margin:5,
+      filename:crFileBaseName()+'.pdf',
+      image:{type:'jpeg',quality:1},
+      html2canvas:{scale:2,useCORS:true,logging:false,backgroundColor:'#0B110D'},
+      jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}
+    };
+    await html2pdf().set(opt).from(element).save();
+  }catch(err){
+    console.error('Error al exportar PDF del Comparativo Anual:',err);
+    alert('Error al generar el PDF: '+err.message);
+  }finally{
+    if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
+  }
+}
+
+// ── Exportar SOLO el cuadro (tabla) del Comparativo Anual a Excel ──
+function crExportExcel(){
+  const btn=document.querySelector('#cr-export-bar .btn:nth-child(2)');
+  const origTxt=btn?btn.innerHTML:'';
+  if(btn){btn.innerHTML='⏳ Generando Excel...';btn.disabled=true;}
+  try{
+    const tableEl=document.getElementById('cr-tbl');
+    const ws=XLSX.utils.table_to_sheet(tableEl);
+    ws['!cols']=[{wch:34},{wch:16},{wch:16},{wch:14},{wch:16},{wch:16},{wch:16},{wch:14},{wch:16}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'COMPARATIVO ANUAL');
+    XLSX.writeFile(wb,crFileBaseName()+'.xlsx');
+  }catch(err){
+    console.error('Error al exportar Excel del Comparativo Anual:',err);
+    alert('Error al generar el Excel: '+err.message);
+  }finally{
+    if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
+  }
+}
+
+// ── Exportar SOLO el cuadro (tabla) del Comparativo Anual como Imagen (PNG) ──
+async function crExportImage(){
+  const btn=document.querySelector('#cr-export-bar .btn:nth-child(3)');
+  const origTxt=btn?btn.innerHTML:'';
+  if(btn){btn.innerHTML='⏳ Generando Imagen...';btn.disabled=true;}
+  try{
+    // html2canvas va empaquetado dentro de html2pdf.bundle.min.js pero no siempre queda expuesto
+    // como variable global; si no está disponible, lo cargamos aparte (reutilizando loadScript(), ya
+    // definida en el sistema para este mismo propósito) antes de continuar.
+    if(typeof html2canvas==='undefined'){
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    }
+    const element=document.getElementById('cr-tbl-card');
+    const canvas=await html2canvas(element,{scale:2,useCORS:true,logging:false,backgroundColor:'#0B110D'});
+    const link=document.createElement('a');
+    link.download=crFileBaseName()+'.png';
+    link.href=canvas.toDataURL('image/png',1.0);
+    link.click();
+  }catch(err){
+    console.error('Error al exportar Imagen del Comparativo Anual:',err);
+    alert('Error al generar la imagen: '+err.message);
+  }finally{
+    if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
+  }
 }
 
 // Inicializar
