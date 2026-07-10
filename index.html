@@ -263,6 +263,17 @@ table.dt td.z{color:var(--tx3);}
 table.dt td.tot{background:var(--bg4)!important;color:var(--gold)!important;font-weight:700;}
 table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 
+/* ━━━━━ COMPARATIVO ANUAL: números más grandes (aditivo, no reemplaza nada) ━━━━━ */
+table.dt#cr-tbl{font-size:14px;}
+table.dt#cr-tbl tbody td{padding:10px 12px;}
+table.dt#cr-tbl tbody td:not(:first-child){font-size:15px;font-weight:600;}
+table.dt#cr-tbl tbody td:first-child{font-size:12.5px;}
+table.dt#cr-tbl td.tot{font-size:15.5px;}
+@media (max-width:900px){
+  table.dt#cr-tbl{font-size:12px;}
+  table.dt#cr-tbl tbody td:not(:first-child){font-size:12.5px;}
+}
+
 /* ━━━━━ RANKING ━━━━━ */
 .rank-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd);}
 .rank-row:last-child{border:none;}
@@ -277,6 +288,16 @@ table.dt td.yr-sep{border-left:2px solid var(--bd2);}
 /* ━━━━━ COMPARACIÓN SEMANAL (aditivo, no reemplaza nada) ━━━━━ */
 table.dt tbody tr.sem-cat-sep td{background:var(--bg4)!important;color:var(--gold)!important;font-weight:800;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;text-align:left!important;border-top:1px solid var(--gold-d);border-bottom:1px solid var(--gold-d);}
 .sw-pill{min-width:64px;text-align:center;}
+
+/* ━━━━━ COMPARATIVO SEMANAL: números más grandes y compactos (aditivo, no reemplaza nada) ━━━━━ */
+table.dt#sem-dtbl tbody td{padding:7px 8px;}
+table.dt#sem-dtbl tbody td:not(:first-child){font-size:13px;font-weight:600;}
+table.dt#sem-dtbl tbody td:first-child{font-size:11px;padding:7px 10px;}
+table.dt#sem-dtbl td.tot{font-size:13.5px;}
+@media (max-width:900px){
+  table.dt#sem-dtbl tbody td:not(:first-child){font-size:11.5px;}
+  table.dt#sem-dtbl tbody td{padding:6px 6px;}
+}
 
 /* ━━━━━ MULTI-YEAR COMPARISON ━━━━━ */
 .yrcmp-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);}
