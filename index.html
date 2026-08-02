@@ -909,6 +909,10 @@ table.dt#sem-dtbl td.tot{font-size:13.5px;}
       <input type="checkbox" id="cmp-check" onchange="toggleComparativo()" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;">
       <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:12px;color:var(--tx2);letter-spacing:.08em;text-transform:uppercase;">📊 Activar comparativo por años</span>
     </label>
+    <label id="cmp3-toggle-label" style="display:inline-flex;align-items:center;gap:10px;cursor:pointer;padding:10px 16px;background:var(--bg3);border:1px solid var(--bd2);border-radius:4px;transition:border-color .2s;margin-top:8px;">
+      <input type="checkbox" id="cmp3-check" onchange="toggleComparativo3()" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:12px;color:var(--tx2);letter-spacing:.08em;text-transform:uppercase;">📊 Activar comparativo por 3 años</span>
+    </label>
   </div>
   <div class="card">
     <div class="card-t">Selección de años y periodo</div>
@@ -922,6 +926,11 @@ table.dt#sem-dtbl td.tot{font-size:13.5px;}
       <div id="yr-comp-wrap" style="display:none;">
         <label class="lbl">Año comparativo</label>
         <select id="yr-comp-rep" onchange="toggleCmpPeriod();chkReady()"><option value="">— Sin comparativa —</option></select>
+      </div>
+      <!-- Año comparativo 2 (tercer año): oculto hasta activar "comparativo por 3 años" -->
+      <div id="yr-comp2-wrap" style="display:none;">
+        <label class="lbl">Año comparativo 2 (tercer año)</label>
+        <select id="yr-comp2-rep" onchange="toggleCmpPeriod();chkReady()"><option value="">— Sin 3er año —</option></select>
       </div>
       <div>
         <label class="lbl">Tipo de periodo</label>
@@ -945,6 +954,10 @@ table.dt#sem-dtbl td.tot{font-size:13.5px;}
       <div class="g2" id="pp-d-comp" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd2);">
         <div><label class="lbl">Fecha desde (año comparativo)</label><input type="date" id="df2"></div>
         <div><label class="lbl">Fecha hasta (año comparativo)</label><input type="date" id="dt2"></div>
+      </div>
+      <div class="g2" id="pp-d-comp2" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd2);">
+        <div><label class="lbl">Fecha desde (año comparativo 2)</label><input type="date" id="df3"></div>
+        <div><label class="lbl">Fecha hasta (año comparativo 2)</label><input type="date" id="dt3"></div>
       </div>
     </div>
     <div id="pp-f" style="display:block;">
@@ -1037,6 +1050,9 @@ table.dt#sem-dtbl td.tot{font-size:13.5px;}
           <input type="text" id="tbl-q" placeholder="Buscar indicador..." style="max-width:260px;" oninput="filterTbl()">
           <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx3);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">
             <input type="checkbox" id="hide-zero" onchange="filterTbl()"> Ocultar ceros
+          </label>
+          <label id="cmp-diffmode-label" style="display:none;align-items:center;gap:6px;font-size:11px;color:var(--tx3);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">
+            <input type="checkbox" id="cmp-diff-consec" onchange="onDiffModeChange()"> Comparar año a año
           </label>
         </div>
         <div class="tbl-wrap"><table class="dt" id="dtbl"></table></div>
@@ -1536,6 +1552,11 @@ function processExcelBuffer(arrayBuffer, source){
     const yrCompRep=document.getElementById('yr-comp-rep');
     yrCompRep.innerHTML='<option value="">— Sin comparativa —</option>';
     availYears.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;yrCompRep.appendChild(o);});
+    const yrComp2Rep=document.getElementById('yr-comp2-rep');
+    if(yrComp2Rep){
+      yrComp2Rep.innerHTML='<option value="">— Sin 3er año —</option>';
+      availYears.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;yrComp2Rep.appendChild(o);});
+    }
 
     buildIndPills();buildMGrid();
     initDashSelectors();
@@ -1932,6 +1953,11 @@ function togglePP(){
   const hasComp=!!(document.getElementById('yr-comp-rep')||{value:''}).value;
   const ppDComp=document.getElementById('pp-d-comp');
   if(ppDComp) ppDComp.style.display=(v==='days'&&hasComp)?'grid':'none';
+  // Mostrar tercer par de fechas si hay tercer año comparativo y el periodo es "days"
+  const cmp3On=document.getElementById('cmp3-check')&&document.getElementById('cmp3-check').checked;
+  const hasComp2=cmp3On&&!!(document.getElementById('yr-comp2-rep')||{value:''}).value;
+  const ppDComp2=document.getElementById('pp-d-comp2');
+  if(ppDComp2) ppDComp2.style.display=(v==='days'&&hasComp2)?'grid':'none';
   chkReady();
 }
 function chkReady(){
@@ -1955,10 +1981,11 @@ function toggleComparativo(){
   const optFull=document.getElementById('opt-full');
   const ptSel=document.getElementById('rep-ptype');
   const lbl=document.getElementById('cmp-toggle-label');
+  const cmp3Check=document.getElementById('cmp3-check');
   if(on){
-    // Mostrar columna año comparativo y cambiar grid a 3 cols
+    // Mostrar columna año comparativo y cambiar grid a 3 cols (o 4 si el comparativo por 3 años ya está activo)
     wrap.style.display='block';
-    row.style.gridTemplateColumns='1fr 1fr 1fr';
+    row.style.gridTemplateColumns=(cmp3Check&&cmp3Check.checked)?'1fr 1fr 1fr 1fr':'1fr 1fr 1fr';
     // Ocultar "Año completo" y forzar a meses si estaba en full
     if(optFull) optFull.style.display='none';
     if(ptSel.value==='full'){ptSel.value='months';togglePP();}
@@ -1975,13 +2002,46 @@ function toggleComparativo(){
     const ppDComp=document.getElementById('pp-d-comp');
     if(ppDComp) ppDComp.style.display='none';
     if(lbl) lbl.style.borderColor='var(--bd2)';
+    // Si el comparativo por 3 años estaba activo, se desactiva también (depende del comparativo base)
+    if(cmp3Check&&cmp3Check.checked){cmp3Check.checked=false;toggleComparativo3(true);}
   }
   chkReady();
+}
+
+function toggleComparativo3(skipCmpToggle){
+  const on=document.getElementById('cmp3-check')&&document.getElementById('cmp3-check').checked;
+  const wrap2=document.getElementById('yr-comp2-wrap');
+  const row=document.getElementById('years-row');
+  const cmpCheck=document.getElementById('cmp-check');
+  const lbl3=document.getElementById('cmp3-toggle-label');
+  if(on){
+    // Activar automáticamente el comparativo base si no estaba activo, sin necesidad de que el usuario lo marque primero
+    if(cmpCheck&&!cmpCheck.checked&&!skipCmpToggle){
+      cmpCheck.checked=true;
+      toggleComparativo();
+    }
+    if(wrap2) wrap2.style.display='block';
+    row.style.gridTemplateColumns='1fr 1fr 1fr 1fr';
+    if(lbl3) lbl3.style.borderColor='var(--gold)';
+  } else {
+    if(wrap2) wrap2.style.display='none';
+    const cmpOn=cmpCheck&&cmpCheck.checked;
+    row.style.gridTemplateColumns=cmpOn?'1fr 1fr 1fr':'1fr 1fr';
+    // Resetear selector del tercer año
+    const yrComp2=document.getElementById('yr-comp2-rep');
+    if(yrComp2) yrComp2.value='';
+    const ppDComp2=document.getElementById('pp-d-comp2');
+    if(ppDComp2) ppDComp2.style.display='none';
+    if(lbl3) lbl3.style.borderColor='var(--bd2)';
+  }
+  toggleCmpPeriod();
 }
 
 function toggleCmpPeriod(){
   const cmpOn=document.getElementById('cmp-check')&&document.getElementById('cmp-check').checked;
   const yrComp=cmpOn?(document.getElementById('yr-comp-rep').value||''):'';
+  const cmp3On=document.getElementById('cmp3-check')&&document.getElementById('cmp3-check').checked;
+  const yrComp2=(cmpOn&&cmp3On)?((document.getElementById('yr-comp2-rep')||{value:''}).value||''):'';
   // Ocultar opción "Año completo" cuando hay comparativo activo
   const optFull=document.getElementById('opt-full');
   if(optFull){
@@ -1993,6 +2053,9 @@ function toggleCmpPeriod(){
   const pt=(document.getElementById('rep-ptype')||{value:''}).value;
   const ppDComp=document.getElementById('pp-d-comp');
   if(ppDComp) ppDComp.style.display=(pt==='days'&&yrComp)?'grid':'none';
+  // Mostrar tercer par de fechas si periodo es "days" y hay tercer año comparativo
+  const ppDComp2=document.getElementById('pp-d-comp2');
+  if(ppDComp2) ppDComp2.style.display=(pt==='days'&&yrComp2)?'grid':'none';
   chkReady();
 }
 
@@ -2003,12 +2066,15 @@ function filterByPeriod(rows,pt,isComp){
   if(pt==='full') return rows;
   if(pt==='months'){return rows.filter(r=>{const mi=MONTHS.indexOf((r['MES']||'').toString().trim().toUpperCase());return mi>=mRange[0]&&mi<=mRange[1];});}
   if(pt==='days'){
-    // Si es el comparativo y tiene fechas propias (df2/dt2), usarlas
-    const df2El=document.getElementById('df2');
-    const dt2El=document.getElementById('dt2');
-    const useOwn=isComp&&df2El&&dt2El&&df2El.value&&dt2El.value;
-    const fromStr=useOwn?df2El.value:document.getElementById('df').value;
-    const toStr=useOwn?dt2El.value:document.getElementById('dt').value;
+    // isComp: false/undefined = año principal, true o 1 = comparativo 1 (df2/dt2), 2 = comparativo 2 (df3/dt3)
+    const compLevel=isComp===true?1:(isComp===2?2:0);
+    const dfId=compLevel===2?'df3':(compLevel===1?'df2':'df');
+    const dtId=compLevel===2?'dt3':(compLevel===1?'dt2':'dt');
+    const dfOwnEl=compLevel?document.getElementById(dfId):null;
+    const dtOwnEl=compLevel?document.getElementById(dtId):null;
+    const useOwn=compLevel&&dfOwnEl&&dtOwnEl&&dfOwnEl.value&&dtOwnEl.value;
+    const fromStr=useOwn?dfOwnEl.value:document.getElementById('df').value;
+    const toStr=useOwn?dtOwnEl.value:document.getElementById('dt').value;
     const from=new Date(fromStr+'T00:00:00');
     const to=new Date(toStr+'T23:59:59');
     return rows.filter(r=>{const d=r['FECHA']?new Date(r['FECHA']):null;return d&&d>=from&&d<=to;});
@@ -2074,7 +2140,24 @@ function genReport(){
     } else periodLblComp=`Año ${yrComp} completo`;
     resultComp=calcResult(rowsComp,units);
   }
-  rData={result,units,periodLbl,yr,mode,ts:new Date().toLocaleString('es-PE'),yrComp,resultComp,periodLblComp};
+  // Calcular resultado del tercer año (comparativo 2), solo si el comparativo por 3 años está activo
+  const cmp3On=document.getElementById('cmp3-check')&&document.getElementById('cmp3-check').checked;
+  const yrComp2=(yrComp&&cmp3On)?(document.getElementById('yr-comp2-rep').value||''):'';
+  let resultComp2=null;
+  let periodLblComp2='';
+  if(yrComp2 && WB[yrComp2]){
+    let rowsComp2=mode==='region'?[...WB[yrComp2]]:WB[yrComp2].filter(r=>selUnitsSet.has(getUnitOfRow(r)));
+    rowsComp2=filterByPeriod(rowsComp2,pt,2);
+    if(pt==='months') periodLblComp2=mRange[0]===mRange[1]?`${MNAMES[mRange[0]]} ${yrComp2}`:`${MNAMES[mRange[0]]} – ${MNAMES[mRange[1]]} ${yrComp2}`;
+    else if(pt==='days'){
+      const df3El=document.getElementById('df3');
+      const dt3El=document.getElementById('dt3');
+      const useOwn=df3El&&dt3El&&df3El.value&&dt3El.value;
+      periodLblComp2=useOwn?`${df3El.value} al ${dt3El.value}`:`${document.getElementById('df').value} al ${document.getElementById('dt').value} (${yrComp2})`;
+    } else periodLblComp2=`Año ${yrComp2} completo`;
+    resultComp2=calcResult(rowsComp2,units);
+  }
+  rData={result,units,periodLbl,yr,mode,ts:new Date().toLocaleString('es-PE'),yrComp,resultComp,periodLblComp,yrComp2,resultComp2,periodLblComp2};
   renderReport(rData);
   setSt('st-gen','st-ok','✓ Reporte generado · '+rows.length.toLocaleString()+' registros');
   document.getElementById('nb-rep').style.display='inline';
@@ -2103,7 +2186,9 @@ function renderReport({result,units,periodLbl,yr,mode}){
   // Actualizar título del card según modo
   const tblTitle=document.getElementById('tbl-card-title');
   if(tblTitle){
-    if(rData.yrComp&&rData.resultComp)
+    if(rData.yrComp&&rData.resultComp&&rData.yrComp2&&rData.resultComp2)
+      tblTitle.textContent='Cuadro Comparativo '+rData.yr+' vs '+rData.yrComp+' vs '+rData.yrComp2;
+    else if(rData.yrComp&&rData.resultComp)
       tblTitle.textContent='Cuadro Comparativo '+rData.yr+' vs '+rData.yrComp;
     else
       tblTitle.textContent='Tabla Completa de Indicadores';
@@ -2149,47 +2234,78 @@ function filterTbl(){
 // ──────────────────────────────────────
 function renderCmpTable(data){
   if(!data||!data.yrComp||!data.resultComp) return;
-  const {result,resultComp,units,yr,yrComp,periodLbl,periodLblComp}=data;
+  const {result,resultComp,resultComp2,units,yr,yrComp,yrComp2,periodLbl,periodLblComp,periodLblComp2}=data;
+  const has3=!!(yrComp2&&resultComp2);
+  // Mostrar/ocultar el toggle "Comparar año a año" solo cuando hay 3 años activos
+  const diffModeLbl=document.getElementById('cmp-diffmode-label');
+  if(diffModeLbl) diffModeLbl.style.display=has3?'inline-flex':'none';
+  const consecMode=has3&&document.getElementById('cmp-diff-consec')&&document.getElementById('cmp-diff-consec').checked;
+  // Armar arreglo de años disponibles (principal, comparativo 1, comparativo 2) y ordenarlos cronológicamente ascendente (más antiguo primero, izquierda a derecha)
+  let yearsArr=[{y:yr,period:periodLbl,res:result,colorIdx:0},{y:yrComp,period:periodLblComp||yrComp,res:resultComp,colorIdx:1}];
+  if(has3) yearsArr.push({y:yrComp2,period:periodLblComp2||yrComp2,res:resultComp2,colorIdx:2});
+  yearsArr.sort((a,b)=>Number(a.y)-Number(b.y));
+  const yearColors=['var(--gold)','var(--tx2)','var(--tx3)']; // color por posición cronológica (más antiguo → más reciente)
   const items=Object.keys(result);
   const cols=[...units]; // Sin columna TOTAL en el comparativo
-  // Fila 1 cabecera: INDICADORES/UNIDADES | colspan=3 por unidad
+  const nDiffCols=consecMode?yearsArr.length-1:1;
+  const nSub=yearsArr.length+nDiffCols; // subcolumnas por unidad: N años + N diferencias
+  // Fila 1 cabecera: INDICADORES/UNIDADES | colspan=nSub por unidad
   let h='<thead>';
   h+='<tr class="hdr1" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;">';
   h+='<th rowspan="2" style="vertical-align:middle;min-width:160px;">INDICADORES / UNIDADES</th>';
   cols.forEach(u=>{
-    h+=`<th colspan="3" style="text-align:center;background:var(--bg3);">${shortN(u)}</th>`;
+    h+=`<th colspan="${nSub}" style="text-align:center;background:var(--bg3);">${shortN(u)}</th>`;
   });
   h+='</tr>';
-  // Fila 2: año principal | año comparativo | diferencia
+  // Fila 2: años en orden cronológico | diferencia(s)
   h+='<tr class="hdr1" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;">';
   cols.forEach(()=>{
-    h+=`<th style="text-align:center;font-size:9px;color:var(--gold);white-space:nowrap;">${periodLbl}</th>`;
-    h+=`<th style="text-align:center;font-size:9px;color:var(--tx3);white-space:nowrap;">${periodLblComp||yrComp}</th>`;
-    h+=`<th style="text-align:center;font-size:9px;color:var(--cr-l);white-space:nowrap;">DIFERENCIA</th>`;
+    yearsArr.forEach((ya,i)=>{
+      h+=`<th style="text-align:center;font-size:9px;color:${yearColors[i]||'var(--tx3)'};white-space:nowrap;">${ya.period}</th>`;
+    });
+    if(consecMode){
+      for(let i=0;i<yearsArr.length-1;i++){
+        h+=`<th style="text-align:center;font-size:9px;color:var(--cr-l);white-space:nowrap;">DIF. ${yearsArr[i].y}→${yearsArr[i+1].y}</th>`;
+      }
+    } else {
+      h+=`<th style="text-align:center;font-size:9px;color:var(--cr-l);white-space:nowrap;">DIFERENCIA</th>`;
+    }
   });
   h+='</tr></thead><tbody>';
   items.forEach(item=>{
     const row=result[item]||{};
-    const rowC=resultComp[item]||{};
     const totV=row['TOTAL']||0;
     h+=`<tr data-q="${item.toLowerCase()}" data-tot="${totV}"><td>${item}</td>`;
     cols.forEach(u=>{
-      const v=row[u]||0;
-      const vc=rowC[u]||0;
-      const diff=v-vc;
-      const clsBase=u==='TOTAL'?'tot':'';
-      const clsZ=v===0?'z':'';
-      const clsZc=vc===0?'z':'';
-      const arrow=diff>0?'▲ ':diff<0?'▼ ':'● ';
-      const diffColor=diff>0?'color:var(--go)':diff<0?'color:var(--red-diff)':'color:var(--tx2)';
-      const diffStr=diff===0?'0':(diff>0?'+':'')+fmtVal(item,diff);
-      h+=`<td class="${clsBase} ${clsZ}">${fmtVal(item,v)}</td>`;
-      h+=`<td class="${clsBase} ${clsZc}" style="color:var(--tx2);">${fmtVal(item,vc)}</td>`;
-      h+=`<td class="${clsBase}" style="${diffColor};font-weight:700;">${arrow}${diffStr}</td>`;
+      const vals=yearsArr.map(ya=>(ya.res[item]||{})[u]||0);
+      vals.forEach((v,i)=>{
+        const clsZ=v===0?'z':'';
+        const style=i===0?'':`style="color:${yearColors[i]||'var(--tx3)'};"`;
+        h+=`<td class="${clsZ}" ${style}>${fmtVal(item,v)}</td>`;
+      });
+      // Diferencia(s)
+      const diffs=[];
+      if(consecMode){
+        for(let i=0;i<vals.length-1;i++) diffs.push(vals[i+1]-vals[i]);
+      } else {
+        // Por defecto: comparar los dos años más recientes (los últimos dos en orden cronológico)
+        diffs.push(vals[vals.length-1]-vals[vals.length-2]);
+      }
+      diffs.forEach(diff=>{
+        const arrow=diff>0?'▲ ':diff<0?'▼ ':'● ';
+        const diffColor=diff>0?'color:var(--go)':diff<0?'color:var(--red-diff)':'color:var(--tx2)';
+        const diffStr=diff===0?'0':(diff>0?'+':'')+fmtVal(item,diff);
+        h+=`<td style="${diffColor};font-weight:700;">${arrow}${diffStr}</td>`;
+      });
     });
     h+='</tr>';
   });
   document.getElementById('dtbl').innerHTML=h+'</tbody>';
+}
+
+// Vuelve a pintar el cuadro comparativo cuando cambia el modo de diferencia (año a año / extremos)
+function onDiffModeChange(){
+  if(rData&&rData.yrComp&&rData.resultComp) renderCmpTable(rData);
 }
 
 
@@ -2204,8 +2320,9 @@ function dlExcelReporte(){
   const origTxt=btn?btn.innerHTML:'';
   if(btn){btn.innerHTML='⏳ Generando...';btn.disabled=true;}
   try{
-    const{result,resultComp,units,periodLbl,periodLblComp,yr,yrComp,mode,ts}=rData;
+    const{result,resultComp,resultComp2,units,periodLbl,periodLblComp,periodLblComp2,yr,yrComp,yrComp2,mode,ts}=rData;
     const esComp=!!(yrComp&&resultComp);
+    const esComp3=!!(esComp&&yrComp2&&resultComp2);
     const items=Object.keys(result);
     const modoLbl=mode==='division'?'Por Divisiones PNP':'Por Comisarías / Subunidades';
     const wb=XLSX.utils.book_new();
@@ -2368,8 +2485,13 @@ function dlExcelReporte(){
       const wsMerges=[];
       let R=0; // fila actual (0-based)
 
+      // Número de subcolumnas por unidad en modo comparativo: N años + N diferencias (según modo activo)
+      const consecModeTop=esComp3&&document.getElementById('cmp-diff-consec')&&document.getElementById('cmp-diff-consec').checked;
+      const nYearsTop=esComp3?3:2;
+      const nSub=consecModeTop?nYearsTop+(nYearsTop-1):nYearsTop+1;
+
       // ── CABECERA INSTITUCIONAL (filas 0-3) ──
-      const totalCols = esComp ? 1 + units.length*3 : 1 + units.length + 1; // ind + cols + total
+      const totalCols = esComp ? 1 + units.length*nSub : 1 + units.length + 1; // ind + cols + total
       wsData.push([null]); // fila 0: título
       wsData.push([null]); // fila 1: subtítulo
       wsData.push([null]); // fila 2: metadatos
@@ -2383,9 +2505,9 @@ function dlExcelReporte(){
       // Asignar valores y estilos de cabecera institucional
       sc(ws,XLSX.utils.encode_cell({r:0,c:0}),'POLICÍA NACIONAL DEL PERÚ  ·  REGIÓN POLICIAL AMAZONAS',STY.instTitle);
       sc(ws,XLSX.utils.encode_cell({r:1,c:0}),
-        `CONSOLIDADO ESTADÍSTICO OPERACIONAL  ·  ${periodLbl.toUpperCase()}${esComp?' vs '+periodLblComp.toUpperCase():''}`,STY.instSub);
+        `CONSOLIDADO ESTADÍSTICO OPERACIONAL  ·  ${periodLbl.toUpperCase()}${esComp?' vs '+periodLblComp.toUpperCase():''}${esComp3?' vs '+periodLblComp2.toUpperCase():''}`,STY.instSub);
       sc(ws,XLSX.utils.encode_cell({r:2,c:0}),
-        `${modoLbl}  |  ${esComp?'COMPARATIVO: '+yr+' vs '+yrComp:'Año: '+yr}  |  Generado: ${ts}  |  ${items.length} indicadores · ${units.length} unidades`,
+        `${modoLbl}  |  ${esComp?'COMPARATIVO: '+yr+' vs '+yrComp+(esComp3?' vs '+yrComp2:''):'Año: '+yr}  |  Generado: ${ts}  |  ${items.length} indicadores · ${units.length} unidades`,
         STY.instMeta);
 
       // ── CABECERA DE COLUMNAS ──
@@ -2432,64 +2554,84 @@ function dlExcelReporte(){
         ws['!cols']=[{wch:36},...cols.map((u,i)=>({wch:i===cols.length-1?14:Math.max(shortN(u).length+4,12)}))];
 
       } else {
-        // Modo comparativo: INDICADORES | (Unidad: año_p, año_c, diff) x N unidades
+        // Modo comparativo: INDICADORES | (Unidad: años en orden cronológico + diferencia(s)) x N unidades
+        // Armar años ordenados cronológicamente (más antiguo → más reciente), igual que en pantalla
+        let yearsArr=[{y:yr,period:periodLbl,res:result},{y:yrComp,period:periodLblComp||yrComp,res:resultComp}];
+        if(esComp3) yearsArr.push({y:yrComp2,period:periodLblComp2||yrComp2,res:resultComp2});
+        yearsArr.sort((a,b)=>Number(a.y)-Number(b.y));
+        const consecMode=consecModeTop;
+        const nSubReal=nSub;
         // Cabecera fila 1: INDICADORES + colspan por unidad
         sc(ws,XLSX.utils.encode_cell({r:hdrR,c:0}),'INDICADORES / UNIDADES',STY.colHdr);
         wsMerges.push({s:{r:hdrR,c:0},e:{r:hdrR2,c:0}}); // indicadores rowspan 2
         units.forEach((u,ui)=>{
-          const colBase=1+ui*3;
+          const colBase=1+ui*nSubReal;
           sc(ws,XLSX.utils.encode_cell({r:hdrR,c:colBase}),shortN(u),STY.colHdr);
-          wsMerges.push({s:{r:hdrR,c:colBase},e:{r:hdrR,c:colBase+2}});
+          wsMerges.push({s:{r:hdrR,c:colBase},e:{r:hdrR,c:colBase+nSubReal-1}});
         });
-        // Cabecera fila 2: año principal / año comparativo / diferencia por cada unidad
+        // Cabecera fila 2: años en orden cronológico + diferencia(s) por cada unidad
         units.forEach((u,ui)=>{
-          const colBase=1+ui*3;
-          sc(ws,XLSX.utils.encode_cell({r:hdrR2,c:colBase}),periodLbl,STY.colHdrPrin);
-          sc(ws,XLSX.utils.encode_cell({r:hdrR2,c:colBase+1}),periodLblComp||yrComp,STY.colHdrComp);
-          sc(ws,XLSX.utils.encode_cell({r:hdrR2,c:colBase+2}),'DIFERENCIA',STY.colHdrDiff);
+          const colBase=1+ui*nSubReal;
+          yearsArr.forEach((ya,yi)=>{
+            sc(ws,XLSX.utils.encode_cell({r:hdrR2,c:colBase+yi}),ya.period,yi===0?STY.colHdrPrin:STY.colHdrComp);
+          });
+          if(consecMode){
+            for(let i=0;i<yearsArr.length-1;i++){
+              sc(ws,XLSX.utils.encode_cell({r:hdrR2,c:colBase+yearsArr.length+i}),`DIF. ${yearsArr[i].y}→${yearsArr[i+1].y}`,STY.colHdrDiff);
+            }
+          } else {
+            sc(ws,XLSX.utils.encode_cell({r:hdrR2,c:colBase+nSubReal-1}),'DIFERENCIA',STY.colHdrDiff);
+          }
         });
         // Datos comparativos
         items.forEach((item,ri)=>{
           const alt=ri%2===1;
           const row=result[item]||{};
-          const rowC=resultComp[item]||{};
           sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:0}),item,alt?STY.indAlt:STY.indNormal);
           units.forEach((u,ui)=>{
-            const colBase=1+ui*3;
-            const v=row[u]||0;
-            const vc=rowC[u]||0;
-            const diff=v-vc;
-            const numV=isKgInd(item)?parseFloat(v.toFixed(3)):v;
-            const numVc=isKgInd(item)?parseFloat(vc.toFixed(3)):vc;
-            const numDiff=isKgInd(item)?parseFloat(diff.toFixed(3)):diff;
+            const colBase=1+ui*nSubReal;
             const numFmt=isKgInd(item)?'0.000':'#,##0';
             const numFmtD=isKgInd(item)?'+0.000;-0.000;0.000':'+#,##0;-#,##0;0';
-            // Valor año principal
-            sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:colBase}),numV,v===0?(alt?STY.valZeroAlt:STY.valZero):(alt?STY.valAlt:STY.valNormal),numFmt);
-            // Valor año comparativo
-            sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:colBase+1}),numVc,vc===0?(alt?STY.valZeroAlt:STY.valZero):(alt?STY.valAlt:STY.valNormal),numFmt);
-            // Diferencia
-            let diffSty;
-            if(diff>0) diffSty=alt?STY.diffPosAlt:STY.diffPos;
-            else if(diff<0) diffSty=alt?STY.diffNegAlt:STY.diffNeg;
-            else diffSty=alt?STY.valZeroAlt:STY.valZero;
-            sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:colBase+2}),numDiff,diffSty,numFmtD);
+            const vals=yearsArr.map(ya=>(ya.res[item]||{})[u]||0);
+            // Valores por año, en orden cronológico
+            vals.forEach((v,yi)=>{
+              const numV=isKgInd(item)?parseFloat(v.toFixed(3)):v;
+              sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:colBase+yi}),numV,v===0?(alt?STY.valZeroAlt:STY.valZero):(alt?STY.valAlt:STY.valNormal),numFmt);
+            });
+            // Diferencia(s)
+            const diffs=[];
+            if(consecMode){ for(let i=0;i<vals.length-1;i++) diffs.push(vals[i+1]-vals[i]); }
+            // Por defecto: comparar los dos años más recientes (los últimos dos en orden cronológico)
+            else diffs.push(vals[vals.length-1]-vals[vals.length-2]);
+            diffs.forEach((diff,di)=>{
+              const numDiff=isKgInd(item)?parseFloat(diff.toFixed(3)):diff;
+              let diffSty;
+              if(diff>0) diffSty=alt?STY.diffPosAlt:STY.diffPos;
+              else if(diff<0) diffSty=alt?STY.diffNegAlt:STY.diffNeg;
+              else diffSty=alt?STY.valZeroAlt:STY.valZero;
+              sc(ws,XLSX.utils.encode_cell({r:dataStartR+ri,c:colBase+yearsArr.length+di}),numDiff,diffSty,numFmtD);
+            });
           });
         });
         // Fila TOTALES comparativo
         const totR=dataStartR+items.length;
         sc(ws,XLSX.utils.encode_cell({r:totR,c:0}),'TOTALES GENERALES',STY.totRowLbl);
         units.forEach((u,ui)=>{
-          const colBase=1+ui*3;
-          const totV=items.reduce((s,item)=>s+(result[item][u]||0),0);
-          const totVc=items.reduce((s,item)=>s+(resultComp[item][u]||0),0);
-          const totD=totV-totVc;
-          sc(ws,XLSX.utils.encode_cell({r:totR,c:colBase}),Math.round(totV),STY.totRow,'#,##0');
-          sc(ws,XLSX.utils.encode_cell({r:totR,c:colBase+1}),Math.round(totVc),STY.totRow,'#,##0');
-          sc(ws,XLSX.utils.encode_cell({r:totR,c:colBase+2}),Math.round(totD),STY.totRow,'+#,##0;-#,##0;0');
+          const colBase=1+ui*nSubReal;
+          const totVals=yearsArr.map(ya=>items.reduce((s,item)=>s+(ya.res[item][u]||0),0));
+          totVals.forEach((totV,yi)=>{
+            sc(ws,XLSX.utils.encode_cell({r:totR,c:colBase+yi}),Math.round(totV),STY.totRow,'#,##0');
+          });
+          const totDiffs=[];
+          if(consecMode){ for(let i=0;i<totVals.length-1;i++) totDiffs.push(totVals[i+1]-totVals[i]); }
+          // Por defecto: comparar los dos años más recientes (los últimos dos en orden cronológico)
+          else totDiffs.push(totVals[totVals.length-1]-totVals[totVals.length-2]);
+          totDiffs.forEach((totD,di)=>{
+            sc(ws,XLSX.utils.encode_cell({r:totR,c:colBase+yearsArr.length+di}),Math.round(totD),STY.totRow,'+#,##0;-#,##0;0');
+          });
         });
         // Anchos de columna
-        ws['!cols']=[{wch:34},...units.flatMap(u=>[{wch:Math.max(shortN(u).length+2,12)},{wch:12},{wch:12}])];
+        ws['!cols']=[{wch:34},...units.flatMap(u=>[{wch:Math.max(shortN(u).length+2,12)},...Array(nSubReal-1).fill({wch:12})])];
       }
 
       // Altura de filas de cabecera
@@ -2498,7 +2640,7 @@ function dlExcelReporte(){
 
       // Calcular rango total de la hoja
       const lastR=(esComp?6:5)+items.length+1;
-      const lastC=esComp?units.length*3:units.length+1;
+      const lastC=esComp?units.length*nSub:units.length+1;
       ws['!ref']=`A1:${XLSX.utils.encode_cell({r:lastR,c:lastC})}`;
 
       XLSX.utils.book_append_sheet(wb,ws,'CUADRO CONSOLIDADO');
@@ -2679,7 +2821,7 @@ function dlExcelReporte(){
     }
 
     // Nombre del archivo con periodo y año
-    const fname=`PNP_Amazonas_${yr}_${periodLbl.replace(/[^\w]/g,'_')}${esComp?'_vs_'+yrComp:''}`;
+    const fname=`PNP_Amazonas_${yr}_${periodLbl.replace(/[^\w]/g,'_')}${esComp?'_vs_'+yrComp:''}${esComp3?'_vs_'+yrComp2:''}`;
     XLSX.writeFile(wb,`${fname}.xlsx`,{bookType:'xlsx',compression:true});
 
     if(btn){btn.innerHTML=origTxt;btn.disabled=false;}
@@ -3115,17 +3257,9 @@ function crSumIndicator(yr,indKey,fromNum,toNum){
 function initComparativoSelectors(){
   const cutoffEl=document.getElementById('cr-cutoff');
   if(!cutoffEl) return;
-  // Buscar la fecha más reciente disponible en toda la base de datos, para usarla como corte por defecto
-  let maxDate=null;
-  Object.keys(WB).forEach(yr=>{
-    (WB[yr]||[]).forEach(r=>{
-      if(!r['FECHA']) return;
-      const d=new Date(r['FECHA']);
-      if(isNaN(d.getTime())) return;
-      if(!maxDate||d>maxDate) maxDate=d;
-    });
-  });
-  const base=maxDate||new Date();
+  // Fecha de corte por defecto: siempre un día antes de la fecha actual del sistema (hoy - 1)
+  const base=new Date();
+  base.setDate(base.getDate()-1);
   const p=x=>String(x).padStart(2,'0');
   cutoffEl.value=`${base.getFullYear()}-${p(base.getMonth()+1)}-${p(base.getDate())}`;
   document.getElementById('cr-empty').style.display='none';
