@@ -1425,10 +1425,9 @@ function filterRowsByPeriod(rows,pt,mRng,dFrom,dTo){
   return rows;
 }
 
-// ── URL del servidor (fija en el código) ──
+// ── Acceso directo a la Google Drive API (sin Apps Script) ──
 const DRIVE_FOLDER_ID = '1vou8mxIyDmxSu3K8n-dYeekKnjgYMP1G';
-const DRIVE_API_KEY   = 'AIzaSyDrK67oXhwjz5ShFOKVnMI6D7p2NguHp3c';
-const APPS_SCRIPT_URL = (function(){const _0x=['aHR0cHM6Ly9zY3JpcHQuZ29vZ2xl','LmNvbS9tYWNyb3Mvcy9BS2Z5Y2J5','bE9mNTRZRHVvcEFOb0g1eWJiNHVR','R2JhZUpLTnJvUUc0UHZ5SFJUdVVo','VkdSc2NvNFdxRXV2VFljSnpIMDU0','NkJ1dy9leGVj'];return atob(_0x.join(''));})();
+const DRIVE_API_KEY   = 'AIzaSyB1tZcU9ciD0PuV6rG-CaaGgfL2JTuo_Lo';
 
 // ──────────────────────────────────────
 //  SERVIDOR / BASE DE DATOS LOADER
@@ -1466,40 +1465,54 @@ function showLoader(msg,sub){
 }
 function hideLoader(){document.getElementById('global-loader').style.display='none';}
 
+async function encontrarExcelMasReciente(){
+  const mimeExcel='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const q=encodeURIComponent(`'${DRIVE_FOLDER_ID}' in parents and mimeType='${mimeExcel}' and trashed=false`);
+  const url=`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&fields=files(id,name,modifiedTime)&key=${DRIVE_API_KEY}`;
+  const resp=await fetch(url);
+  if(!resp.ok){
+    const detalle=await resp.json().catch(()=>null);
+    throw new Error(detalle?.error?.message||`HTTP ${resp.status}: No se pudo listar la carpeta`);
+  }
+  const json=await resp.json();
+  if(!json.files||json.files.length===0) throw new Error('No se encontró ningún archivo .xlsx en la carpeta');
+  return json.files[0]; // el primero = más reciente (orderBy modifiedTime desc)
+}
+
+async function descargarExcel(fileId){
+  const url=`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${DRIVE_API_KEY}`;
+  const resp=await fetch(url);
+  if(!resp.ok){
+    const detalle=await resp.json().catch(()=>null);
+    throw new Error(detalle?.error?.message||`HTTP ${resp.status}: No se pudo descargar el archivo`);
+  }
+  return await resp.arrayBuffer();
+}
+
 async function loadFromDrive(){
   document.getElementById('load-ok').style.display='none';
   document.getElementById('load-err').style.display='none';
 
-  setDriveStatus('loading','Conectando con el Servidor...','Obteniendo datos del servidor');
-  showLoader('Buscando datos...','Consultando base de datos · Por favor espere');
+  setDriveStatus('loading','Conectando con Google Drive...','Buscando el archivo más reciente');
+  showLoader('Buscando datos...','Consultando Google Drive · Por favor espere');
 
   try{
-    // ── Llamar al Apps Script que busca y devuelve el xlsx en base64 ──
-    const resp=await fetch(APPS_SCRIPT_URL);
-    if(!resp.ok) throw new Error(`HTTP ${resp.status}: No se pudo contactar el servidor`);
-    const json=await resp.json();
+    // ── Buscar el .xlsx más reciente de la carpeta, directo con la Drive API ──
+    const archivo=await encontrarExcelMasReciente();
+    const modDate=archivo.modifiedTime?new Date(archivo.modifiedTime).toLocaleString('es-PE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
 
-    if(json.error){
-      throw new Error(json.error);
-    }
+    showLoader('Procesando datos...',`Archivo: ${archivo.name} · Modificado: ${modDate}`);
 
-    const fileName=json.name||'archivo.xlsx';
-    const modDate=json.modified?new Date(json.modified).toLocaleString('es-PE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
-
-    showLoader('Procesando datos...',`Archivo: ${fileName} · Modificado: ${modDate}`);
-
-    // ── Decodificar base64 → ArrayBuffer ──
-    const binary=atob(json.data);
-    const bytes=new Uint8Array(binary.length);
-    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    // ── Descargar el contenido binario del archivo ──
+    const buffer=await descargarExcel(archivo.id);
 
     hideLoader();
-    processExcelBuffer(bytes.buffer,`Servidor · ${fileName}`);
+    processExcelBuffer(buffer,`Drive · ${archivo.name}`);
 
   }catch(err){
     hideLoader();
     setDriveStatus('disconnected','Error al cargar datos',err.message);
-    document.getElementById('load-err-msg').textContent=`Error: ${err.message}. Verifique que el Apps Script esté publicado correctamente y la carpeta tenga archivos .xlsx.`;
+    document.getElementById('load-err-msg').textContent=`Error: ${err.message}. Verifique que la carpeta de Drive sea pública ("Cualquiera con el enlace") y tenga archivos .xlsx.`;
     document.getElementById('load-err').style.display='block';
   }
 }
